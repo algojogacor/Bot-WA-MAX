@@ -1,7 +1,7 @@
 // --- 1. IMPORT MODUL UTAMA (BAILEYS) ---
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
 const pino = require('pino');
-const qrcode = require('qrcode-terminal');
+const qrcode = require('qrcode-terminal'); // Wajib ada untuk QR Manual
 const fs = require('fs');
 
 // Database Lokal
@@ -31,18 +31,13 @@ const ALLOWED_GROUPS = [
     "120363422854499629@g.us"        // Grup English Area
 ];
 
-// --- TAMBAHAN UNTUK HOSTING (Supaya bot tidak mati) ---
+// --- TAMBAHAN UNTUK HOSTING (Supaya bot tidak mati/sleep) ---
 const express = require('express');
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.get('/', (req, res) => {
-    res.send('<h1>Bot Arya is Running! 🚀</h1>');
-});
-
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-});
+app.get('/', (req, res) => res.send('<h1>Bot Arya is Running! 🚀</h1>'));
+app.listen(port, () => console.log(`Server is running on port ${port}`));
 
 // --- 3. FUNGSI UTAMA KONEKSI BAILEYS ---
 async function startBot() {
@@ -62,7 +57,8 @@ async function startBot() {
 
     const sock = makeWASocket({
         logger: pino({ level: 'silent' }),
-        printQRInTerminal: true,
+        // ⚠️ WAJIB FALSE: Kita pakai QR manual di bawah agar muncul di Koyeb/Terminal
+        printQRInTerminal: false, 
         auth: state,
         browser: ['Bot Arya', 'Chrome', '1.0.0'],
         syncFullHistory: false,
@@ -73,10 +69,13 @@ async function startBot() {
     sock.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect, qr } = update;
         
+        // 🔥 FIX QR CODE (Manual Generate) 🔥
         if (qr) {
             console.log('\n================================================');
-            console.log('👇 SCAN QR CODE DI BAWAH INI 👇');
+            console.log('👇 SCAN QR CODE DI BAWAH INI (Tunggu sebentar) 👇');
             console.log('================================================\n');
+            // Generate QR Mode Kecil (biar muat di log hosting)
+            qrcode.generate(qr, { small: true });
         }
 
         if (connection === 'close') {
@@ -97,8 +96,6 @@ async function startBot() {
         const m = messages[0];
         if (!m.message) return;
         
-        // if (m.key.fromMe) return; // Uncomment jika tidak ingin bot respon dirinya sendiri
-
         try {
             // ADAPTOR PESAN
             const remoteJid = m.key.remoteJid;
@@ -137,19 +134,10 @@ async function startBot() {
                 hasMedia: hasMedia,
                 type: msgType,
                 getChat: async () => chat,
-                
-                react: async (emoji) => {
-                    await sock.sendMessage(remoteJid, { 
-                        react: { text: emoji, key: m.key } 
-                    });
-                },
-
-                reply: async (text) => {
-                    await sock.sendMessage(remoteJid, { text: text + "" }, { quoted: m });
-                },
+                react: async (emoji) => await sock.sendMessage(remoteJid, { react: { text: emoji, key: m.key } }),
+                reply: async (text) => await sock.sendMessage(remoteJid, { text: text + "" }, { quoted: m }),
                 key: m.key,
                 message: m.message,
-                // Helper tambahan untuk quoted msg
                 extendedTextMessage: m.message.extendedTextMessage
             };
 
@@ -157,29 +145,17 @@ async function startBot() {
             //  SECURITY GATEKEEPER
             // ==========================================================
             if (!chat.isGroup) return; // Hanya respon di grup
-
-            // Cek ID Grup
-            if (msg.body === '!idgrup') {
-                return msg.reply(`🆔 *ID GRUP INI:*\n\`${chat.id._serialized}\``);
-            }
-
-            // Whitelist Check
-            if (!ALLOWED_GROUPS.includes(chat.id._serialized)) {
-                return; 
-            }
+            if (msg.body === '!idgrup') return msg.reply(`🆔 *ID GRUP:* \`${chat.id._serialized}\``);
+            if (!ALLOWED_GROUPS.includes(chat.id._serialized)) return; 
 
             // ==========================================================
             //  DATABASE & LOGIKA USER
             // ==========================================================
             const db = global.db; 
-
-            // Setup DB Structure
             if (!db.users) db.users = {};
             if (!db.market) db.market = {};
             
             const today = new Date().toISOString().split("T")[0];
-
-            // Inisialisasi User Baru
             const defaultQuest = {
                 daily: [
                     { id: "chat", name: "Ngobrol Aktif", progress: 0, target: 10, reward: 200, claimed: false },
@@ -193,17 +169,15 @@ async function startBot() {
             if (!db.users[sender]) {
                 db.users[sender] = {
                     balance: 1000, xp: 0, level: 1, inv: [], buffs: {}, lastDaily: 0,
-                    bolaWin: 0, bolaTotal: 0, bolaProfit: 0,
-                    crypto: {}, debt: 0, bank: 0, 
+                    bolaWin: 0, bolaTotal: 0, bolaProfit: 0, crypto: {}, debt: 0, bank: 0, 
                     quest: JSON.parse(JSON.stringify(defaultQuest))
                 };
             }
 
             const user = db.users[sender];
             if (!user) return; 
-
             user.lastSeen = Date.now();
-            user.name = pushName; // Simpan nama terbaru
+            user.name = pushName;
 
             // Auto-Fix Data User
             if (!user.crypto) user.crypto = {};
@@ -214,39 +188,28 @@ async function startBot() {
 
             // ANTI TOXIC
             const toxicWords = ["anjing", "kontol", "memek", "goblok", "idiot", "babi", "tolol", "ppq", "jembut"];
-            if (toxicWords.some(k => body.toLowerCase().includes(k))) {
-                return msg.reply("⚠️ Jaga ketikan bro, jangan toxic!");
-            }
+            if (toxicWords.some(k => body.toLowerCase().includes(k))) return msg.reply("⚠️ Jaga ketikan bro, jangan toxic!");
 
-            // DAILY RESET
+            // DAILY RESET & BUFF CHECK
             if (user.quest?.lastReset !== today) {
                 user.quest.daily.forEach(q => { q.progress = 0; q.claimed = false; });
                 user.quest.lastReset = today;
             }
-
-            // BUFF CHECK
             if (user.buffs) {
                 for (let key in user.buffs) {
-                    if (user.buffs[key].active && Date.now() >= user.buffs[key].until) {
-                        user.buffs[key].active = false;
-                    }
+                    if (user.buffs[key].active && Date.now() >= user.buffs[key].until) user.buffs[key].active = false;
                 }
             }
 
-            // XP GAIN
+            // XP & LEVELING
             let xpGain = user.buffs?.xp?.active ? 5 : 2; 
             user.xp += xpGain;
-
-            if (user.quest.weekly && !user.quest.weekly.claimed) {
-                user.quest.weekly.progress++;
-            }
-
+            if (user.quest.weekly && !user.quest.weekly.claimed) user.quest.weekly.progress++;
             let nextLvl = Math.floor(user.xp / 100) + 1;
             if (nextLvl > user.level) {
                 user.level = nextLvl;
                 msg.reply(`🎊 *LEVEL UP!* Sekarang kamu Level *${user.level}*`);
             }
-
             addQuestProgress(user, "chat");
             
             // PARSE COMMAND
@@ -255,57 +218,42 @@ async function startBot() {
             const command = isCommand ? args.shift().toLowerCase() : "";
 
             // ==========================================================
-            //  MODUL INTERAKTIF (NON-PREFIX)
+            //  COMMAND HANDLER
             // ==========================================================
 
-            // CEK ID
+            // 1. MODUL NON-PREFIX (Interaktif)
             if (command === 'id' || command === 'cekid') {
-                let info = `🆔 *INFORMASI ID*\n\n`;
-                info += `📍 *Chat/Remote JID:* \n\`${remoteJid}\`\n\n`;
-                info += `👤 *Sender JID:* \n\`${sender}\`\n\n`;
-                if (m.key.participant) info += `🔑 *Participant Key:* \n\`${m.key.participant}\`\n`;
-                return msg.reply(info);
+                return msg.reply(`🆔 *ID INFO*\nChat: \`${remoteJid}\`\nUser: \`${sender}\``);
             }
 
-            // MODUL PDF
             if (typeof pdfCmd !== 'undefined') {
                 await pdfCmd(command, args, msg, sender, sock).catch(e => console.error("Error PDF:", e.message));
             }
-
-            // GAME TEBAK
             await gameTebakCmd(command, args, msg, user, db, body).catch(e => console.error("Error Game:", e.message));
-            
-            // CRYPTO & ROB & BATTLE (Non-Prefix Handler jika ada)
-            // (Disini kamu taruh command list untuk keamanan biar ga dipanggil tanpa prefix di logic bawah)
 
-            // ==========================================================
-            //  MODUL COMMAND (WITH PREFIX !)
-            // ==========================================================
+            // 2. MODUL PREFIX (Harus pakai !)
             if (!isCommand) return;
 
-            // ✅ PENTING: Pass 'sock' ke toolsCmd agar stiker work!
+            // 🔥 FIX UTAMA: Kirim 'sock' ke toolsCmd
             await toolsCmd(command, args, msg, user, db, sock).catch(e => console.error("Error Tools:", e.message));
             
             await economyCmd(command, args, msg, user, db).catch(e => console.error("Error Economy:", e.message));
             await bolaCmd(command, args, msg, user, db, sender).catch(e => console.error("Error Bola:", e.message));
-            
-            // ✅ PENTING: Pass 'sock' ke profileCmd (jika butuh kirim gambar profile)
-            if (typeof profileCmd !== 'undefined') {
-                 await profileCmd(command, args, msg, user, db, chat, sock).catch(e => console.error("Error Profile:", e.message));
-            }
-            
             await cryptoCmd(command, args, msg, user, db).catch(e => console.error("Error Crypto:", e.message));
             await robCmd(command, args, msg, user, db).catch(e => console.error("Error Rob:", e.message));
             await battleCmd(command, args, msg, user, db).catch(e => console.error("Error Battle:", e.message));
-            
             await ttsCmd(command, args, msg).catch(e => console.error("Error TTS:", e.message));
             await wikiKnowCmd(command, args, msg).catch(e => console.error("Error WikiKnow:", e.message));
             await adminCmd(command, args, msg, user, db).catch(e => console.error("Error Admin:", e.message));
             await aiCmd(command, args, msg, user, db).catch(e => console.error("Error AI:", e.message));
+            
+            if (typeof profileCmd !== 'undefined') {
+                 await profileCmd(command, args, msg, user, db, chat, sock).catch(e => console.error("Error Profile:", e.message));
+            }
 
             // MENU UTAMA
             if (command === "menu" || command === "help") {
-                const menuText = `📜 *MENU BOT MULTIFUNGSI (Versi 2.0)*
+                const menuText = `📜 *MENU BOT MULTIFUNGSI*
 
 👤 *USER & PROFILE*
 • !me | !rank | !inv | !daily | !quest
@@ -325,21 +273,32 @@ async function startBot() {
 • !gacha (Jackpot 10k!)
 • !casino <jml> | !slot <jml>
 • !tebakgambar | !asahotak | !susunkata
-• !pvp @user | !battle @user (Duel)
+• !pvp @user | !battle @user (Tantang Duel)
+• !terima (Terima Tantangan)
+• !stopbattle | !surrender (Stop Battle)
 
 ⚽ *SPORT BETTING*
-• !bola | !topbola | !resultbola
+• !updatebola | !bola | !topbola | !resultbola
 
-🧠 *AI & TOOLS*
-• !ai1 <tanya> (Smart AI)
-• !ai2 <tanya> (Roleplay AI)
-• !sharechat (Link History Chat)
-• !s (Stiker) | !toimg (Stiker ke Gambar)
-• !topdf | !pdfdone (Convert Gambar ke PDF)
-• !tts <teks> (Text to Speech)
+🧠 *AI SUPER TIERS*
+• !ai0 <tanya> (Terbaik namun terbatas)
+• !ai1 <tanya> (Flagship/Smart)
+• !ai2 <tanya> (Roleplay/Asik)
+• !ai3 <tanya> (Speed/Cepat)
+• !ask <tanya> (Auto-Pilot)
+• !sharechat (Buat Link History) 
 
-*By: Arya Bot* 🤖`;
-                
+📸 *EDITOR & MEDIA*
+• !sticker !toimg (Buat Stiker WA)
+• !topdf (Ubah Gambar ke PDF)
+• !scan (Gambar B&W) 
+• !pdfdone (Selesai & Buat PDF)
+• !tts (text to speech)
+
+🛠️ *TOOLS & ADMIN*
+• !id (Cek ID Lengkap)
+• !idgrup (Cek ID Grup)
+`;
                 return msg.reply(menuText);
             }
 
@@ -350,11 +309,8 @@ async function startBot() {
 
     // AUTO SAVE (5 Detik)
     setInterval(() => {
-        if (global.db) {
-            saveDB(global.db);
-        }
+        if (global.db) saveDB(global.db);
     }, 5000); 
 }
 
-// Jalankan Bot
 startBot();
