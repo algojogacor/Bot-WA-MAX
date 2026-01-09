@@ -1,7 +1,6 @@
 // --- 1. IMPORT MODUL UTAMA (BAILEYS) ---
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
 const pino = require('pino');
-const qrcode = require('qrcode-terminal'); // Wajib ada untuk QR Manual
 const fs = require('fs');
 
 // Database Lokal
@@ -57,7 +56,7 @@ async function startBot() {
 
     const sock = makeWASocket({
         logger: pino({ level: 'silent' }),
-        // ⚠️ WAJIB FALSE: Kita pakai QR manual di bawah agar muncul di Koyeb/Terminal
+        // ⚠️ WAJIB FALSE: Kita handle manual agar tidak error
         printQRInTerminal: false, 
         auth: state,
         browser: ['Bot Arya', 'Chrome', '1.0.0'],
@@ -69,13 +68,18 @@ async function startBot() {
     sock.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect, qr } = update;
         
-        // 🔥 FIX QR CODE (Manual Generate) 🔥
+        // 🔥 FIX QR CODE JADI TEXT PANJANG 🔥
         if (qr) {
             console.log('\n================================================');
-            console.log('👇 SCAN QR CODE DI BAWAH INI (Tunggu sebentar) 👇');
+            console.log('👇 COPY SEMUA KODE DI BAWAH KE: goqr.me 👇');
             console.log('================================================\n');
-            // Generate QR Mode Kecil (biar muat di log hosting)
-            qrcode.generate(qr, { small: true });
+            
+            // INI AKAN MUNCULKAN TEKS PANJANG (RAW STRING)
+            console.log(qr); 
+            
+            console.log('\n================================================');
+            console.log('☝️ COPY KODE DI ATAS, LALU PASTE DI WEB QR GENERATOR ☝️');
+            console.log('================================================\n');
         }
 
         if (connection === 'close') {
@@ -297,8 +301,7 @@ async function startBot() {
 
 🛠️ *TOOLS & ADMIN*
 • !id (Cek ID Lengkap)
-• !idgrup (Cek ID Grup)
-`;
+• !idgrup (Cek ID Grup)`;
                 return msg.reply(menuText);
             }
 
