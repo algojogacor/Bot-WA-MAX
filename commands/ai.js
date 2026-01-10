@@ -3,11 +3,12 @@ const OpenAI = require('openai');
 const axios = require('axios');
 const { saveDB } = require('../helpers/database'); 
 
-// Konfigurasi Client OpenRouter
+// --- KONFIGURASI API KEY ---
+const API_KEY = process.env.OPENROUTER_API_KEY ;
+
 const client = new OpenAI({
     baseURL: 'https://openrouter.ai/api/v1',
-    // API KEY HARDCODED (Sesuai request)
-    apiKey: "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", 
+    apiKey: API_KEY, 
     defaultHeaders: {
         "HTTP-Referer": "https://wa-bot.com",
         "X-Title": "Arya Bot Multi-Model",
@@ -23,13 +24,13 @@ It corrects mistakes immediately, explains the “why,” and provides improved 
 It encourages the user to think critically and stay consistent. The AI keeps the learning atmosphere chill, constructive, and forward-looking.
 `;
 
-// --- DAFTAR MODEL (SESUAI REQUEST) ---
+// DAFTAR MODEL
 const tier0 = [ "google/gemini-2.5-flash", "deepseek/deepseek-v3.2", "anthropic/claude-sonnet-4.5", "x-ai/grok-code-fast-1", "x-ai/grok-4.1-fast" ];
 const tier1 = [ "google/gemini-2.0-flash-lite-preview-02-05:free", "google/gemini-2.0-pro-exp-02-05:free", "deepseek/deepseek-r1:free", "deepseek/deepseek-v3:free", "meta-llama/llama-3.3-70b-instruct:free", "qwen/qwen-2.5-72b-instruct:free" ];
 const tier2 = [ "gryphe/mythomax-l2-13b:free", "sophosympatheia/midnight-rose-70b:free", "nousresearch/hermes-3-llama-3.1-405b:free" ];
 const tier3 = [ "deepseek/deepseek-r1-distill-llama-70b:free", "nvidia/llama-3.1-nemotron-70b-instruct:free", "mistralai/mistral-nemo:free", "microsoft/phi-3-medium-128k-instruct:free" ];
 
-// GABUNGAN SEMUA MODEL (Untuk cadangan)
+// GABUNGAN SEMUA MODEL (Untuk Global Failover)
 const ALL_MODELS = [...tier0, ...tier1, ...tier2, ...tier3];
 
 module.exports = async (command, args, msg, user, db) => {
@@ -37,7 +38,7 @@ module.exports = async (command, args, msg, user, db) => {
     const validCommands = ['ask', 'ai', 'tanya', 'ai0', 'ai1', 'ai2', 'ai3', 'sharechat', 'history'];
     if (!validCommands.includes(command)) return;
 
-    // --- FITUR 1: SHARE CHAT / HISTORY ---
+    // FITUR 1: SHARE CHAT / HISTORY
     if (command === 'sharechat' || command === 'history') {
         if (!user.aiFullHistory || user.aiFullHistory.length === 0) {
             return msg.reply("❌ *Belum ada riwayat chat!* Ngobrol dulu dong sama Algojo.");
@@ -66,11 +67,11 @@ module.exports = async (command, args, msg, user, db) => {
         }
     }
 
-    // --- FITUR 2: AI CHAT ---
+    // FITUR 2: AI CHAT
     const userPrompt = args.join(' ');
     if (!userPrompt) return msg.reply(`🤖 *Format salah.*\n\nContoh:\n!ai1 Apa itu simple present tense?\n!sharechat (Untuk lihat history)`);
 
-    // LOGIKA PENENTUAN URUTAN MODEL (PRIORITY + FAILOVER)
+    // LOGIKA TIER (PRIORITY + FAILOVER)
     let priorityList = [];
     let modeName = "";
 
@@ -79,13 +80,12 @@ module.exports = async (command, args, msg, user, db) => {
     else if (command === 'ai2') { priorityList = tier2; modeName = "🎭 Algojo (Roleplay)"; }
     else if (command === 'ai3') { priorityList = tier3; modeName = "⚡ Algojo (Cepat)"; }
     else { 
-        // Default (!ai / !ask) -> Mulai dari Tier 1 (Gratis Pintar) baru ke yang lain
+        // Default (!ai) -> Mulai dari Tier 1 (Free Smart)
         priorityList = tier1; 
         modeName = "🤖 Algojo AI"; 
     }
 
-    // 🔥 PENTING: GABUNGKAN LIST (Priority Dulu, Baru Sisanya)
-    // Set digunakan untuk menghapus duplikat jika ada model yang sama
+    // Gabungkan list target: [Priority Dulu] -> [Sisa Model Lain sebagai Cadangan]
     const finalTargetList = [...new Set([...priorityList, ...ALL_MODELS])];
 
     await msg.reply(`*${modeName} sedang berpikir...*`);
@@ -103,10 +103,10 @@ module.exports = async (command, args, msg, user, db) => {
     let success = false;
     let lastError = "";
 
-    // Loop Semua Model (Sampai Berhasil)
+    // Loop Model (Failover System)
     for (const modelId of finalTargetList) {
         try {
-            // Log supaya kamu tau dia lagi nyoba siapa
+            // Log untuk debug
             console.log(`🔄 Mencoba model: ${modelId}...`);
             
             const completion = await client.chat.completions.create({
@@ -117,29 +117,29 @@ module.exports = async (command, args, msg, user, db) => {
             const answer = completion.choices[0].message.content;
             const timestamp = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
 
-            // Simpan Memory
+            // Simpan Memory Pendek (Konteks Chat)
             user.aiMemory.push({ role: "user", content: userPrompt });
             user.aiMemory.push({ role: "assistant", content: answer });
             if (user.aiMemory.length > 20) user.aiMemory = user.aiMemory.slice(-20);
 
-            // Simpan Archive
+            // Simpan Archive (History Lengkap)
             user.aiFullHistory.push({ role: "user", content: userPrompt, date: timestamp });
             user.aiFullHistory.push({ role: "assistant", content: answer, date: timestamp, model: modelId });
 
             saveDB(db);
 
-            await msg.reply(`*${modeName}:* \n\n${answer}\n\n_`);
+            await msg.reply(`*${modeName}:* \n\n${answer}\n\n_🧠 Model: ${modelId}_`);
             await msg.react('✅');
             
             success = true;
             console.log(`✅ SUKSES pakai model: ${modelId}`);
-            break; // BERHENTI LOOP KARENA SUDAH SUKSES
+            break; // BERHENTI LOOP KARENA SUDAH BERHASIL
 
         } catch (error) {
-            // Cek error, kalau 404/400/429 lanjut aja
+            // Jika error, lanjut ke model berikutnya
             console.log(`⚠️ Gagal ${modelId}: ${error.status || 'Error'} - ${error.message}`);
             lastError = error.message;
-            continue; // LANJUT KE MODEL BERIKUTNYA
+            continue; 
         }
     }
 
