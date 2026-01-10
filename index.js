@@ -19,7 +19,8 @@ const pdfCmd = require('./commands/pdf');
 const robCmd = require('./commands/rob');           
 const wikiKnowCmd = require('./commands/WikiKnow'); 
 const adminCmd = require('./commands/admin');       
-const aiCmd = require('./commands/ai');             
+const aiCmd = require('./commands/ai');   
+const imageCmd = require('./commands/image'); // <-- TAMBAHKAN INI
 
 // --- 2. KONFIGURASI WHITELIST GRUP ---
 const ALLOWED_GROUPS = [
@@ -250,6 +251,7 @@ async function startBot() {
             await wikiKnowCmd(command, args, msg).catch(e => console.error("Error WikiKnow:", e.message));
             await adminCmd(command, args, msg, user, db).catch(e => console.error("Error Admin:", e.message));
             await aiCmd(command, args, msg, user, db).catch(e => console.error("Error AI:", e.message));
+            await imageCmd(command, args, msg, user, db, sock).catch(e => console.error("Error Image:", e.message));
             
             if (typeof profileCmd !== 'undefined') {
                  await profileCmd(command, args, msg, user, db, chat, sock).catch(e => console.error("Error Profile:", e.message));
@@ -298,6 +300,7 @@ async function startBot() {
 • !scan (Gambar B&W) 
 • !pdfdone (Selesai & Buat PDF)
 • !tts (text to speech)
+• !img (Image generator)
 
 🛠️ *TOOLS & ADMIN*
 • !id (Cek ID Lengkap)
@@ -317,3 +320,4 @@ async function startBot() {
 }
 
 startBot();
+
