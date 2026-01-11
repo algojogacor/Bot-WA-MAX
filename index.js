@@ -35,7 +35,7 @@ const ALLOWED_GROUPS = [
     "120363422854499629@g.us"        // Grup English Area
 ];
 
-// --- TAMBAHAN UNTUK HOSTING (Supaya bot tidak mati/sleep) ---
+// Agar bot tidak mati
 const express = require('express');
 const app = express();
 const port = process.env.PORT || 3000;
@@ -297,7 +297,7 @@ async function startBot() {
 • !casino <jml> | !slot <jml> | !tembok (Tebak Hal di Belakang Tembok)
 • !tebakgambar | !asahotak | !susunkata
 • !duel @user (Russian Roullete) <bet>
-
+• !bom <bet> !stop (Minesweeper)
 ⚽ *SPORT BETTING*
 • !updatebola | !bola | !topbola | !resultbola
 
@@ -335,6 +335,7 @@ async function startBot() {
 }
 
 startBot();
+
 
 
 
