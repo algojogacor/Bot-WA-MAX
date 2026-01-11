@@ -277,7 +277,7 @@ async function startBot() {
 
 🎮 *GAMES*
 • !gacha (Jackpot 10k!)
-• !casino <jml> | !slot <jml>
+• !casino <jml> | !slot <jml> | !tembok (Tebak Hal di Belakang Tembok)
 • !tebakgambar | !asahotak | !susunkata
 • !pvp @user | !battle @user (Tantang Duel)
 • !terima (Terima Tantangan)
@@ -320,4 +320,5 @@ async function startBot() {
 }
 
 startBot();
+
 
