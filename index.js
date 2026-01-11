@@ -15,6 +15,7 @@ const battleCmd = require('./commands/battle');
 const ttsCmd = require('./commands/tts');           
 const gameTebakCmd = require('./commands/gameTebak'); 
 const cryptoCmd = require('./commands/crypto');     
+const rouletteCmd = require('./commands/roulette');
 const pdfCmd = require('./commands/pdf');           
 const robCmd = require('./commands/rob');           
 const wikiKnowCmd = require('./commands/WikiKnow'); 
@@ -251,6 +252,7 @@ async function startBot() {
             await bolaCmd(command, args, msg, user, db, sender).catch(e => console.error("Error Bola:", e.message));
             await cryptoCmd(command, args, msg, user, db).catch(e => console.error("Error Crypto:", e.message));
             await robCmd(command, args, msg, user, db).catch(e => console.error("Error Rob:", e.message));
+            await rouletteCmd(command, args, msg, user, db).catch(e => console.error("Error Roulette:", e.message));
             await battleCmd(command, args, msg, user, db).catch(e => console.error("Error Battle:", e.message));
             await ttsCmd(command, args, msg).catch(e => console.error("Error TTS:", e.message));
             await wikiKnowCmd(command, args, msg).catch(e => console.error("Error WikiKnow:", e.message));
@@ -287,7 +289,7 @@ async function startBot() {
 • !jualsaham <kode> <jml> : Jual saham
 • !pf/!porto           : Cek Portofolio Saham & Aset
 
-🏢 *BISNIS & PROPERTI
+🏢 *BISNIS & PROPERTI*
 • !properti     : Cek katalog & aset kamu
 • !beliusaha <id> <jml> : Beli bisnis baru
 • !collect      : Panen uang dari bisnis
@@ -298,6 +300,8 @@ async function startBot() {
 • !tebakgambar | !asahotak | !susunkata
 • !duel @user (Russian Roullete) <bet>
 • !bom <bet> !stop (Minesweeper)
+• !rolet <pilihan> <bet>
+
 ⚽ *SPORT BETTING*
 • !updatebola | !bola | !topbola | !resultbola
 
@@ -335,6 +339,7 @@ async function startBot() {
 }
 
 startBot();
+
 
 
 
