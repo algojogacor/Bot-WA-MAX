@@ -21,6 +21,7 @@ const wikiKnowCmd = require('./commands/WikiKnow');
 const adminCmd = require('./commands/admin');       
 const aiCmd = require('./commands/ai');   
 const duelCmd = require('./commands/duel');
+const stocksCmd = require('./commands/stocks');
 const propertyCmd = require('./commands/property'); 
 const imageCmd = require('./commands/image'); 
 
@@ -251,6 +252,7 @@ async function startBot() {
             await battleCmd(command, args, msg, user, db).catch(e => console.error("Error Battle:", e.message));
             await ttsCmd(command, args, msg).catch(e => console.error("Error TTS:", e.message));
             await wikiKnowCmd(command, args, msg).catch(e => console.error("Error WikiKnow:", e.message));
+            await stocksCmd(command, args, msg, user, db).catch(e => console.error("Error Stocks:", e.message));
             await adminCmd(command, args, msg, user, db).catch(e => console.error("Error Admin:", e.message));
             await aiCmd(command, args, msg, user, db).catch(e => console.error("Error AI:", e.message));
             await imageCmd(command, args, msg, user, db, sock).catch(e => console.error("Error Image:", e.message));
@@ -325,6 +327,7 @@ async function startBot() {
 }
 
 startBot();
+
 
 
 
