@@ -20,6 +20,7 @@ const robCmd = require('./commands/rob');
 const wikiKnowCmd = require('./commands/WikiKnow'); 
 const adminCmd = require('./commands/admin');       
 const aiCmd = require('./commands/ai');   
+const minesCmd = require('./commands/mines');
 const duelCmd = require('./commands/duel');
 const stocksCmd = require('./commands/stocks');
 const propertyCmd = require('./commands/property'); 
@@ -245,6 +246,7 @@ async function startBot() {
             await toolsCmd(command, args, msg, user, db, sock).catch(e => console.error("Error Tools:", e.message));
             await economyCmd(command, args, msg, user, db).catch(e => console.error("Error Economy:", e.message));
             await propertyCmd(command, args, msg, user, db).catch(e => console.error("Error Property:", e.message));
+            await minesCmd(command, args, msg, user, db).catch(e => console.error("Error Mines:", e.message));
             await duelCmd(command, args, msg, user, db).catch(e => console.error("Error Duel:", e.message));
             await bolaCmd(command, args, msg, user, db, sender).catch(e => console.error("Error Bola:", e.message));
             await cryptoCmd(command, args, msg, user, db).catch(e => console.error("Error Crypto:", e.message));
@@ -333,6 +335,7 @@ async function startBot() {
 }
 
 startBot();
+
 
 
 
