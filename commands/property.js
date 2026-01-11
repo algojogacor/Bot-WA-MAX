@@ -2,7 +2,7 @@ const { saveDB } = require('../helpers/database');
 
 // KONFIGURASI PROPERTI (TIER UMKM s/d CRAZY RICH)
 const PROPERTIES = {
-    // --- TIER 1: UMKM (Jutaan) ---
+    // TIER 1: UMKM (Jutaan)
     gerobak: { 
         name: "🍡 Gerobak Cilok", 
         price: 5_000_000, 
@@ -22,7 +22,7 @@ const PROPERTIES = {
         cap: 7_000_000 
     },
     
-    // --- TIER 2: JURAGAN (Ratusan Juta) ---
+    // TIER 2: JURAGAN (Ratusan Juta)
     warnet: { 
         name: "💻 Warnet Gaming", 
         price: 150_000_000, 
@@ -42,7 +42,7 @@ const PROPERTIES = {
         cap: 200_000_000 
     },
 
-    // --- TIER 3: BOSS BESAR (Miliaran) ---
+    // TIER 3: BOSS BESAR (Miliaran)
     pabrik: { 
         name: "🏭 Pabrik Tekstil", 
         price: 2_500_000_000, 
@@ -62,7 +62,7 @@ const PROPERTIES = {
         cap: 5_000_000_000 
     },
 
-    // --- TIER 4: KONGLEMERAT (Puluhan Miliar) ---
+    // TIER 4: KONGLEMERAT (Puluhan Miliar)
     mall: { 
         name: "🏙️ Mall Grand Indonesia", 
         price: 50_000_000_000, 
@@ -76,12 +76,12 @@ const PROPERTIES = {
         cap: 80_000_000_000 
     },
 
-    // --- TIER 5: END GAME (Triliunan) ---
+    // TIER 5: END GAME (Triliunan)
     satelit: { 
         name: "🛰️ Stasiun Luar Angkasa", 
-        price: 1_000_000_000_000, // 1 Triliun
-        income: 15_000_000_000,   // 15 Miliar / Jam
-        cap: 500_000_000_000_000  // Cap Gede Banget
+        price: 1_000_000_000_000,
+        income: 15_000_000_000,   
+        cap: 500_000_000_000_000  
     }
 };
 
@@ -98,7 +98,7 @@ module.exports = async (command, args, msg, user, db) => {
     }
 
     const now = Date.now();
-    // Hitung selisih jam (Decimal)
+    // Hitung selisih jam
     const hoursPassed = (now - user.business.lastCollect) / (1000 * 60 * 60);
 
     // 2. MENU UTAMA (!properti)
@@ -111,11 +111,11 @@ module.exports = async (command, args, msg, user, db) => {
         for (let [key, p] of Object.entries(PROPERTIES)) {
             const hrg = p.price.toLocaleString('id-ID');
             const inc = p.income.toLocaleString('id-ID');
-            // Tampilkan ID dengan huruf tebal miring biar jelas
+            // Tampilkan ID
             txt += `▪️ *${p.name}* \n   └ ID: \`${key}\` | 💰 Rp ${hrg}\n   └ 💸 Income: Rp ${inc}/jam\n`;
         }
 
-        // -- Bagian Aset Saya --
+        // Bagian Aset Saya
         txt += `\n👤 *ASET SAYA:*\n`;
         let totalIncome = 0;
         let hasAsset = false;
@@ -161,7 +161,7 @@ module.exports = async (command, args, msg, user, db) => {
             return msg.reply(`❌ Modal kurang bos! Harga: Rp ${cost.toLocaleString('id-ID')}.`);
         }
 
-        // AUTO COLLECT SEBELUM BELI (Biar timer reset)
+        // AUTO COLLECT SEBELUM BELI
         let collected = 0;
         for (let [k, q] of Object.entries(user.business.owned)) {
             if (q > 0) {
