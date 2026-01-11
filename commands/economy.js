@@ -10,11 +10,11 @@ const shopItems = {
         duration: 3600000 
     },
     "gacha-charm": { 
-        name: "🍀 Gacha Charm (1 Jam)", 
-        price: 1000, 
+        name: "🍀 Gacha Charm (2 Jam)", 
+        price: 100000000, 
         type: "buff", 
         effect: "gacha", 
-        duration: 3600000 
+        duration: 7200000 
     }
 };
 
@@ -66,20 +66,19 @@ module.exports = async (command, args, msg, user, db) => {
         return msg.reply("🎁 *DAILY CLAIM*\nKamu mendapatkan 💰500 koin! Gunakan untuk modal trading.");
     }
 
-    // 3. GAME CASINO (HARD MODE)
+    // 3. GAME CASINO (HARD MODE - 35% Win Rate)
     if (command === "casino" || command === "judi") {
         const bet = parseBet(args[0]);
         if (!bet) return msg.reply("❌ Format: `!casino <jumlah>`\nContoh: `!casino 100`");
         if (user.balance < bet) return msg.reply("❌ Uang tidak cukup!");
 
         // Logika Menang/Kalah (DIPERSULIT)
-        // Default: 65% Kalah, 35% Menang
-        let winThreshold = 0.65; 
+        let winThreshold = 0.65; // 65% Kalah
         let bonusText = "";
 
-        // Cek Buff Charm (Kalau pakai item, chance menang jadi 50:50)
+        // Cek Buff Charm
         if (user.buffs.gacha?.active && now < user.buffs.gacha.until) {
-            winThreshold = 0.50; 
+            winThreshold = 0.50; // Jadi 50%
             bonusText = "\n🍀 *Luck Charm Active!* (Chance Up)";
         }
 
@@ -99,38 +98,39 @@ module.exports = async (command, args, msg, user, db) => {
         saveDB(db);
     }
 
-    // 4. GAME SLOT (HARD MODE - DILUTED POOL)
+    // 4. GAME SLOT (EXTREME HARD MODE)
     if (command === "slot") {
         const bet = parseBet(args[0]);
         if (!bet) return msg.reply("❌ Format: `!slot <jumlah>`");
         if (user.balance < bet) return msg.reply("❌ Uang kurang.");
 
-        // Pool diperbanyak dengan "Sampah" agar susah dapat kembar
-        const emojis = ["🍒", "🍋", "🍇", "💎", "7️⃣", "💩", "🦴", "🏴‍☠️"];
+        // Pool "Sampah" diperbanyak agar SUSAH dapat kembar
+        // Ratio: 5 Bagus vs 5 Sampah (Peluang pair turun drastis)
+        const emojis = ["🍒", "🍋", "🍇", "💎", "7️⃣", "💩", "🦴", "🏴‍☠️", "🌑", "🥀"];
         
         const r = () => emojis[Math.floor(Math.random() * emojis.length)];
         let a = r(), b = r(), c = r();
 
         // Manipulasi Buff (Sedikit bantuan kalau punya charm)
         if (user.buffs.gacha?.active && now < user.buffs.gacha.until && Math.random() > 0.6) {
-            b = a; // Paksa slot ke-2 sama dengan ke-1 (biar minimal pair)
+            b = a; 
         }
 
         let resMsg = `🎰 | ${a} | ${b} | ${c} |\n\n`;
         let winAmount = 0;
 
-        // Jackpot (3 Sama)
+        // Jackpot (3 Sama) - Hadiah Gede karena susah banget
         if (a === b && b === c) {
-            winAmount = bet * 10; // Jackpot besar karena susah
-            if (a === "7️⃣") winAmount = bet * 20; 
-            if (a === "💎") winAmount = bet * 50; 
+            winAmount = bet * 15; 
+            if (a === "7️⃣") winAmount = bet * 30; 
+            if (a === "💎") winAmount = bet * 75; 
             
             user.balance += winAmount;
             resMsg += `🚨 *JACKPOT SULTAN!!!* 🚨\nAnda menang 💰${winAmount.toLocaleString('id-ID')}!`;
         } 
-        // Pair (2 Sama)
+        // Pair (2 Sama) - Hadiah dikit (Balik modal sebagian)
         else if (a === b || b === c || a === c) {
-            winAmount = Math.floor(bet * 0.5); // Balik modal setengah
+            winAmount = Math.floor(bet * 0.5); 
             user.balance += winAmount;
             resMsg += `✨ *Pair!* (2 Gambar sama).\nHadiah: 💰${winAmount.toLocaleString('id-ID')}`;
         } 
@@ -145,7 +145,7 @@ module.exports = async (command, args, msg, user, db) => {
         return msg.reply(resMsg);
     }
 
-    // 5. GAME BARU: TEBAK TEMBOK (!tembok)
+    // 5. GAME TEBAK TEMBOK (!tembok) - Chance 33%
     if (command === "tembok" || command === "wall") {
         const bet = parseBet(args[0]);
         const choice = parseInt(args[1]);
@@ -161,17 +161,14 @@ module.exports = async (command, args, msg, user, db) => {
         const contents = ["💰", "👻", "👹"]; 
         
         // Acak posisi isi tembok
-        // Algoritma Fisher-Yates Shuffle sederhana
         for (let i = contents.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [contents[i], contents[j]] = [contents[j], contents[i]];
         }
 
-        // Cek Pilihan User (Index array mulai dari 0, input user 1-3)
         const userGet = contents[choice - 1];
         let resultMsg = `🧱 *MEMBUKA TEMBOK NO. ${choice}...* 🔨\n\n`;
         
-        // Tampilkan semua isi tembok
         resultMsg += `[ 1 ] [ 2 ] [ 3 ]\n`;
         resultMsg += `[ ${contents[0]} ] [ ${contents[1]} ] [ ${contents[2]} ]\n\n`;
 
@@ -189,7 +186,7 @@ module.exports = async (command, args, msg, user, db) => {
         return msg.reply(resultMsg);
     }
 
-    // 6. GACHA (Tetap sama)
+    // 6. GACHA
     if (command === "gacha") {
         const COST = 200; 
         if (user.balance < COST) return msg.reply(`❌ Butuh 💰${COST} untuk Gacha.`);
