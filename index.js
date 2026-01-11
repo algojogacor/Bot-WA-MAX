@@ -20,6 +20,7 @@ const robCmd = require('./commands/rob');
 const wikiKnowCmd = require('./commands/WikiKnow'); 
 const adminCmd = require('./commands/admin');       
 const aiCmd = require('./commands/ai');   
+const duelCmd = require('./commands/duel');
 const propertyCmd = require('./commands/property'); 
 const imageCmd = require('./commands/image'); 
 
@@ -243,6 +244,7 @@ async function startBot() {
             await toolsCmd(command, args, msg, user, db, sock).catch(e => console.error("Error Tools:", e.message));
             await economyCmd(command, args, msg, user, db).catch(e => console.error("Error Economy:", e.message));
             await propertyCmd(command, args, msg, user, db).catch(e => console.error("Error Property:", e.message));
+            await duelCmd(command, args, msg, user, db).catch(e => console.error("Error Duel:", e.message));
             await bolaCmd(command, args, msg, user, db, sender).catch(e => console.error("Error Bola:", e.message));
             await cryptoCmd(command, args, msg, user, db).catch(e => console.error("Error Crypto:", e.message));
             await robCmd(command, args, msg, user, db).catch(e => console.error("Error Rob:", e.message));
@@ -284,9 +286,7 @@ async function startBot() {
 • !gacha (Jackpot 10k!)
 • !casino <jml> | !slot <jml> | !tembok (Tebak Hal di Belakang Tembok)
 • !tebakgambar | !asahotak | !susunkata
-• !pvp @user | !battle @user (Tantang Duel)
-• !terima (Terima Tantangan)
-• !stopbattle | !surrender (Stop Battle)
+• !duel @user (Russian Roullete) <bet>
 
 ⚽ *SPORT BETTING*
 • !updatebola | !bola | !topbola | !resultbola
@@ -325,6 +325,7 @@ async function startBot() {
 }
 
 startBot();
+
 
 
 
