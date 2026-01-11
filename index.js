@@ -20,7 +20,8 @@ const robCmd = require('./commands/rob');
 const wikiKnowCmd = require('./commands/WikiKnow'); 
 const adminCmd = require('./commands/admin');       
 const aiCmd = require('./commands/ai');   
-const imageCmd = require('./commands/image'); // <-- TAMBAHKAN INI
+const propertyCmd = require('./commands/property'); 
+const imageCmd = require('./commands/image'); 
 
 // --- 2. KONFIGURASI WHITELIST GRUP ---
 const ALLOWED_GROUPS = [
@@ -238,11 +239,10 @@ async function startBot() {
 
             // 2. MODUL PREFIX (Harus pakai !)
             if (!isCommand) return;
-
-            // 🔥 FIX UTAMA: Kirim 'sock' ke toolsCmd
-            await toolsCmd(command, args, msg, user, db, sock).catch(e => console.error("Error Tools:", e.message));
             
+            await toolsCmd(command, args, msg, user, db, sock).catch(e => console.error("Error Tools:", e.message));
             await economyCmd(command, args, msg, user, db).catch(e => console.error("Error Economy:", e.message));
+            await propertyCmd(command, args, msg, user, db).catch(e => console.error("Error Property:", e.message));
             await bolaCmd(command, args, msg, user, db, sender).catch(e => console.error("Error Bola:", e.message));
             await cryptoCmd(command, args, msg, user, db).catch(e => console.error("Error Crypto:", e.message));
             await robCmd(command, args, msg, user, db).catch(e => console.error("Error Rob:", e.message));
@@ -325,6 +325,7 @@ async function startBot() {
 }
 
 startBot();
+
 
 
 
