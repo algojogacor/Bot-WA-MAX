@@ -34,7 +34,7 @@ module.exports = async (command, args, msg, user, db) => {
         let amount = 0;
         // Logic All vs Angka
         if (args[0].toLowerCase() === 'all') {
-            amount = Math.floor(user.balance); // Ambil semua (tanpa desimal)
+            amount = Math.floor(user.balance); 
         } else {
             amount = parseInt(args[0]);
         }
@@ -65,7 +65,7 @@ module.exports = async (command, args, msg, user, db) => {
         let amount = 0;
         // Logic All vs Angka
         if (args[0].toLowerCase() === 'all') {
-            amount = Math.floor(user.bank); // Ambil semua (tanpa desimal)
+            amount = Math.floor(user.bank); 
         } else {
             amount = parseInt(args[0]);
         }
@@ -91,10 +91,9 @@ module.exports = async (command, args, msg, user, db) => {
             return msg.reply(`👮 Polisi lagi patroli! Tunggu ${sisa} menit lagi.`);
         }
 
-        // --- PERBAIKAN DI SINI (DETEKSI MENTION BAILEYS) ---
-        // Kita ambil dari 'contextInfo' agar 100% akurat di Baileys
+        // Ambil mention
         const mentions = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || msg.mentionedIds || [];
-        const targetId = mentions[0]; // Ambil orang pertama yang ditag
+        const targetId = mentions[0];
 
         if (!targetId) {
             return msg.reply("❌ Tag korban! Contoh: `!rob @user`");
@@ -126,7 +125,7 @@ module.exports = async (command, args, msg, user, db) => {
         const chance = Math.random();
         
         if (chance < 0.4) {
-            // Sukses Maling (10-30% dari dompet)
+            // Sukses Maling (10-30% dari dompet target)
             const percentage = 0.1 + Math.random() * 0.2; 
             const stolen = Math.floor(targetWallet * percentage);
 
@@ -135,16 +134,17 @@ module.exports = async (command, args, msg, user, db) => {
             user.lastRob = now;
             saveDB(db);
 
-            // Kita pakai split('@')[0] biar aman kalau nggak bisa mention
             return msg.reply(`🥷 *BERHASIL MALING!*\nKamu mencuri 💰${stolen.toLocaleString()} dari @${targetId.split('@')[0]}!`, null, { mentions: [targetId] });
         } else {
-            // Gagal (Denda 500)
-            const fine = 500;
-            user.balance = Math.max(0, user.balance - fine);
+            // --- BAGIAN INI YANG DIUBAH ---
+            // Gagal (Denda 5% dari Saldo Pencuri)
+            
+            const fine = Math.floor(user.balance * 0.05); // Hitung 5%
+            user.balance -= fine; // Kurangi saldo
             user.lastRob = now;
             saveDB(db);
 
-            return msg.reply(`👮 *TERTANGKAP POLISI!*\nAksi gagal. Kamu didenda 💰${fine}.`);
+            return msg.reply(`👮 *TERTANGKAP POLISI!*\nAksi gagal. Kamu didenda 💰${fine.toLocaleString()} (5% dari saldo dompetmu).`);
         }
     }
 };
