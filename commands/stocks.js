@@ -25,8 +25,8 @@ const getStockPrice = (ticker) => {
     const stock = STOCKS[ticker];
     const now = Date.now();
     
-    // Perioda 10 Detik
-    const period = Math.floor(now / 10000); 
+    // Perioda 20 Detik
+    const period = Math.floor(now / 20000); 
 
     // ALGORITMA PERGERAKAN HARGA
     const wave = Math.sin(period / 5); 
