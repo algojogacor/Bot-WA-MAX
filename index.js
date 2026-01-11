@@ -279,6 +279,12 @@ async function startBot() {
 • !sellcrypto <koin> <jml>
 • !mining | !margin | !paydebt
 
+📈 *PASAR SAHAM (STOCK MARKET)*
+• !saham        : Cek harga saham Real-time (IHSG)
+• !belisaham <kode> <jml> : Beli saham
+• !jualsaham <kode> <jml> : Jual saham
+• !pf/!porto           : Cek Portofolio Saham & Aset
+
 🏢 *BISNIS & PROPERTI
 • !properti     : Cek katalog & aset kamu
 • !beliusaha <id> <jml> : Beli bisnis baru
@@ -327,6 +333,7 @@ async function startBot() {
 }
 
 startBot();
+
 
 
 
