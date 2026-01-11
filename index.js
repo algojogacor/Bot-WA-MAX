@@ -275,6 +275,11 @@ async function startBot() {
 • !sellcrypto <koin> <jml>
 • !mining | !margin | !paydebt
 
+🏢 *BISNIS & PROPERTI
+• !properti     : Cek katalog & aset kamu
+• !beliusaha <id> <jml> : Beli bisnis baru
+• !collect      : Panen uang dari bisnis
+
 🎮 *GAMES*
 • !gacha (Jackpot 10k!)
 • !casino <jml> | !slot <jml> | !tembok (Tebak Hal di Belakang Tembok)
@@ -320,5 +325,6 @@ async function startBot() {
 }
 
 startBot();
+
 
 
