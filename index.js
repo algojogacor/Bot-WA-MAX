@@ -324,6 +324,7 @@ async function startBot() {
 • !pajaknegara : Tarik pajak dari rakyat
 • !subsidi <jml> : Transfer Uang Pribadi -> Kas
 • !korupsi <jml> : Maling Uang Kas (Awas Kudeta!)
+• !topnegara (Leaderboard)
 
 📸 *EDITOR & MEDIA*
 • !sticker !toimg (Buat Stiker WA)
@@ -351,6 +352,7 @@ async function startBot() {
 }
 
 startBot();
+
 
 
 
