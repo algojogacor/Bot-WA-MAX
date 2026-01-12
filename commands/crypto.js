@@ -5,7 +5,7 @@ const fmt = (num) => {
     return Math.floor(Number(num)).toLocaleString('id-ID');
 };
 
-// --- KONFIGURASI PASAR ---
+// --- KONFIGURASI PASAR (SULTAN HARDCORE EDITION) ---
 const COIN_CONFIG = {
     // BTC: Aset Naga (Volatilitas 15%)
     btc:  { start: 5_000_000_000, min: 500_000_000, vol: 15, bounce: 1, baseStock: 20 },
@@ -23,19 +23,19 @@ const COIN_CONFIG = {
     pepe: { start: 500_000,       min: 1_000,       vol: 150, bounce: 5, baseStock: 5000 }
 };
 
-// --- BERITA PASAR ---
+// --- BERITA PASAR EKSTREM ---
 const newsPool = [
     // BAD NEWS (CRASH / RUG PULL)
-    { txt: "☠️ BINANCE DIRETAS! Hacker mencuri 100.000 BTC!", effect: { all: 0.4 }, sMod: { all: 20 } }, // Diskon 60%
-    { txt: "📉 AMERIKA SERIKAT MELARANG TOTAL CRYPTO!", effect: { all: 0.1 }, sMod: { all: 50 } }, // Diskon 90% (Kiamat)
-    { txt: "🐸 DEVELOPER PEPE KABUR (RUG PULL)!", effect: { pepe: 0.05 }, sMod: { pepe: 10000 } }, // PEPE jadi abu (sisa 5%)
-    { txt: "🐕 Elon Musk bilang Doge itu 'Sampah'.", effect: { doge: 0.2 }, sMod: { doge: 5000 } }, // Doge longsor 80%
+    { txt: "☠️ BINANCE DIRETAS! Hacker mencuri 100.000 BTC!", effect: { all: 0.4 }, sMod: { all: 20 } }, 
+    { txt: "📉 AMERIKA SERIKAT MELARANG TOTAL CRYPTO!", effect: { all: 0.1 }, sMod: { all: 50 } }, 
+    { txt: "🐸 DEVELOPER PEPE KABUR (RUG PULL)!", effect: { pepe: 0.05 }, sMod: { pepe: 10000 } }, 
+    { txt: "🐕 Elon Musk bilang Doge itu 'Sampah'.", effect: { doge: 0.2 }, sMod: { doge: 5000 } }, 
     
     // GOOD NEWS (MOON / JACKPOT)
-    { txt: "🚀 ELON MUSK: 'Tesla resmi menerima Doge!'", effect: { doge: 5.0 }, sMod: { doge: -800 } }, // Doge x5
-    { txt: "🌕 BITCOIN menembus resisten $1 Juta!", effect: { btc: 2.5, all: 1.5 }, sMod: { btc: -15 } }, // BTC x2.5
-    { txt: "💎 BLACKROCK memborong semua stok Ethereum!", effect: { eth: 3.0 }, sMod: { eth: -40 } }, // ETH x3
-    { txt: "🐸 PEPE LISTING DI BINANCE! Hype gila-gilaan!", effect: { pepe: 10.0 }, sMod: { pepe: -4000 } }, // PEPE x10 (Jackpot)
+    { txt: "🚀 ELON MUSK: 'Tesla resmi menerima Doge!'", effect: { doge: 5.0 }, sMod: { doge: -800 } }, 
+    { txt: "🌕 BITCOIN menembus resisten $1 Juta!", effect: { btc: 2.5, all: 1.5 }, sMod: { btc: -15 } }, 
+    { txt: "💎 BLACKROCK memborong semua stok Ethereum!", effect: { eth: 3.0 }, sMod: { eth: -40 } }, 
+    { txt: "🐸 PEPE LISTING DI BINANCE! Hype gila-gilaan!", effect: { pepe: 10.0 }, sMod: { pepe: -4000 } }, 
     
     // NORMAL NEWS
     { txt: "📊 Market sideways, trader menunggu sinyal.", effect: { all: 1.0 }, sMod: { all: 0 } },
@@ -44,7 +44,7 @@ const newsPool = [
 ];
 
 module.exports = async (command, args, msg, user, db) => {
-    // 1. Inisialisasi
+    // 1. Inisialisasi User
     if (typeof user.balance === 'undefined') user.balance = 0;
     if (typeof user.crypto === 'undefined') user.crypto = {};
     if (typeof user.debt === 'undefined') user.debt = 0;
@@ -72,7 +72,7 @@ module.exports = async (command, args, msg, user, db) => {
     const marketData = db.market;
     const now = Date.now();
     const UPDATE_INTERVAL = 15 * 60 * 1000; // 15 Menit
-    const TAX_SELL = 0.05; // Pajak Jual 5% (Biar ga scalping receh)
+    const TAX_SELL = 0.05; // Pajak Jual 5%
     
     // ============================================================
     // 3. ENGINE PERUBAHAN HARGA (CORE)
@@ -82,17 +82,15 @@ module.exports = async (command, args, msg, user, db) => {
         const activeNews = newsPool[Math.floor(Math.random() * newsPool.length)];
         if (!marketData.nextNews) marketData.nextNews = newsPool[Math.floor(Math.random() * newsPool.length)].txt;
 
-        // Tentukan Trend (Bias lebih ekstrem)
         const trendRng = Math.random() * 100;
         let trendBias = 0; 
         let trendName = "NORMAL";
-        
 
         if (trendRng < 10) { 
-            trendBias = 100; 
+            trendBias = 100; // +100%
             trendName = "🚀 SUPER BULL RUN";
         } else if (trendRng < 20) { 
-            trendBias = -80; 
+            trendBias = -80; // -80%
             trendName = "🩸 MARKET CRASH";
         } else if (trendRng < 60) {
             trendName = "⚡ HIGH VOLATILITY"; 
@@ -101,39 +99,26 @@ module.exports = async (command, args, msg, user, db) => {
         marketData.marketTrend = trendName;
         marketData.currentNews = activeNews.txt;
 
-        // Loop Coin Update
         for (let k in marketData.prices) {
             const config = COIN_CONFIG[k];
-            
-            // Volatilitas Dasar
             let volatility = config.vol;
-            if (trendName === "⚡ HIGH VOLATILITY") volatility *= 2; // Volatilitas jadi 2x lipat
+            if (trendName === "⚡ HIGH VOLATILITY") volatility *= 2; 
 
-            // Random Swing (-Vol s/d +Vol)
             let randomPercent = (Math.random() * (volatility * 2)) - volatility;
-            
-            // Total Perubahan
             let totalPercent = randomPercent + trendBias;
 
-            // Efek Berita
             let newsMultiplier = activeNews.effect?.[k] || activeNews.effect?.all || 1.0;
-
             let currentPrice = marketData.prices[k];
             let newPrice = currentPrice * (1 + (totalPercent / 100)) * newsMultiplier;
 
-            // Hard Floor (Biar gak 0 atau minus)
-            if (newPrice < config.min) {
-                // Chance Bounce (Memantul dari support)
-                newPrice = config.min * (1 + Math.random()); 
-            }
+            if (newPrice < config.min) newPrice = config.min * (1 + Math.random()); 
 
             marketData.prices[k] = Math.floor(newPrice) || 1000;
 
-            // Update Stok (Refill / Burn)
             const currentStock = marketData.stocks[k];
             const baseStock = config.baseStock;
             let refillRate = 0;
-            if (currentStock < baseStock * 0.2) refillRate = 0.5; // Emergency Refill
+            if (currentStock < baseStock * 0.2) refillRate = 0.5; 
             else if (currentStock < baseStock) refillRate = 0.1; 
             
             let stockChange = Math.floor(baseStock * refillRate) + (Math.floor(Math.random() * 10) - 5);
@@ -141,26 +126,20 @@ module.exports = async (command, args, msg, user, db) => {
             marketData.lastStockChange[k] = stockChange;
         }
 
-        // --- LIKUIDASI MARGIN (KEJAM) ---
-        // Jika rasio hutang > 80% aset, sita SEMUA.
+        // LIKUIDASI MARGIN
         Object.keys(db.users).forEach(id => {
             let u = db.users[id];
             if (u.debt > 0) {
-                // Hitung total aset crypto user
                 let totalAsset = 0;
                 if (u.crypto) for (let [k, v] of Object.entries(u.crypto)) totalAsset += v * (marketData.prices[k] || 0);
-                
-                // Margin Call Trigger: Hutang > 80% Aset + Saldo
                 const collateral = totalAsset + (u.balance || 0);
                 
-                if (u.debt > (collateral * 0.8)) {
-                    u.crypto = {}; // SITA SEMUA ASET
-                    u.balance = 0; // SITA SEMUA UANG
-                    u.debt = 0;    // Anggap lunas (Bangkrut)
-                
+                if (u.debt > (collateral * 0.8)) { // Margin Call 80%
+                    u.crypto = {}; 
+                    u.balance = 0; 
+                    u.debt = 0;    
                 } else {
-                    // Bunga Hutang 10% per update (Sangat mencekik)
-                    u.debt = Math.floor(u.debt * 1.1); 
+                    u.debt = Math.floor(u.debt * 1.1); // Bunga 10%
                 }
             }
         });
@@ -174,14 +153,14 @@ module.exports = async (command, args, msg, user, db) => {
     // COMMANDS
     // ============================================================
 
-    // COMMAND RESET (Admin Only - Buat Fix Harga Lama)
+    // 1. COMMAND RESET (RESTORED!)
     if (command === 'resetmarket') {
         db.market = { prices: {} }; 
         saveDB(db);
         return msg.reply("♻️ *MARKET RESET!* Harga Sultan akan berlaku dalam 15 menit.");
     }
 
-    // COMMAND MARKET
+    // 2. MARKET
     if (command === 'market') {
         const getTxt = (n) => (n && typeof n === 'object' && n.txt) ? n.txt : n;
         if (!marketData.currentNews) marketData.currentNews = newsPool[0].txt;
@@ -197,8 +176,6 @@ module.exports = async (command, args, msg, user, db) => {
         for (let k in marketData.prices) {
             let price = marketData.prices[k];
             let stock = Math.floor(marketData.stocks[k]);
-            
-            // Indikator Profit/Loss drastis
             let icon = '🪙';
             if (marketData.marketTrend.includes("CRASH")) icon = '🩸';
             if (marketData.marketTrend.includes("BULL") || marketData.marketTrend.includes("MOON")) icon = '🚀';
@@ -212,11 +189,10 @@ module.exports = async (command, args, msg, user, db) => {
         txt += `🔮 *RUMOR:* "${getTxt(marketData.nextNews)}"\n\n`;
         txt += `⏳ Update: ${mLeft}m ${sLeft}s\n`;
         txt += `💰 Saldo: Rp ${fmt(user.balance)}`;
-        
         return msg.reply(txt);
     }
 
-    // COMMAND BUY
+    // 3. BUY
     if (command === 'buycrypto') {
         const koin = args[0]?.toLowerCase();
         const jml = parseFloat(args[1]?.replace(',', '.')); 
@@ -236,13 +212,12 @@ module.exports = async (command, args, msg, user, db) => {
         return msg.reply(`✅ *BELI SUKSES*\n+ ${jml} ${koin.toUpperCase()}\n- Rp ${fmt(total)}`);
     }
 
-    // COMMAND SELL
+    // 4. SELL
     if (command === 'sellcrypto') {
         const koin = args[0]?.toLowerCase();
         let jml = args[1];
 
         if (!user.crypto?.[koin]) return msg.reply(`❌ Gak punya aset ${koin}!`);
-
         if (jml === 'all') jml = user.crypto[koin];
         else jml = parseFloat(jml?.replace(',', '.'));
 
@@ -259,7 +234,45 @@ module.exports = async (command, args, msg, user, db) => {
         return msg.reply(`✅ *JUAL SUKSES*\n+ Rp ${fmt(neto)} (Potong Pajak 5%)`);
     }
 
-    // COMMAND PORTFOLIO
+    // 5. MINING (RESTORED & UPGRADED!)
+    if (command === 'mining' || command === 'mine') {
+        const COOLDOWN = 60 * 60 * 1000; // 1 Jam sekali (Biar gak spam)
+        if (now - (user.lastMining || 0) < COOLDOWN) {
+            const timeLeft = Math.ceil((COOLDOWN - (now - user.lastMining)) / 60000);
+            return msg.reply(`⏳ Mining Rig lagi pendingin! Tunggu ${timeLeft} menit.`);
+        }
+
+        // Gacha System: Common (80%), Rare (15%), Legendary (5%)
+        const roll = Math.random();
+        let coin = 'doge';
+        let amount = 0;
+        let rarity = "Common";
+
+        if (roll < 0.05) { // 5% Chance BTC
+            coin = 'btc';
+            rarity = "🔥 LEGENDARY";
+            amount = 0.000005; // Kecil karena harga BTC 5 Miliar (Dapat sekitar 25rb)
+        } else if (roll < 0.20) { // 15% Chance SOL
+            coin = 'sol';
+            rarity = "🔷 RARE";
+            amount = 0.0005; 
+        } else { // 80% Chance PEPE/DOGE
+            coin = Math.random() > 0.5 ? 'pepe' : 'doge';
+            rarity = "⚪ Common";
+            amount = Math.random() * 5; 
+        }
+
+        // Estimasi nilai
+        const value = amount * marketData.prices[coin];
+        
+        user.crypto[coin] = (user.crypto[coin] || 0) + amount;
+        user.lastMining = now;
+        saveDB(db);
+
+        return msg.reply(`⛏️ *MINING RESULT* [${rarity}]\n💎 Dapat: ${amount.toFixed(6)} ${coin.toUpperCase()}\n💰 Estimasi: Rp ${fmt(value)}`);
+    }
+
+    // 6. PORTFOLIO
     if (command === 'pf' || command === 'portofolio') {
         let txt = `💰 *ASET CRYPTO SULTAN*\n\n`;
         let assetTotal = 0;
@@ -277,7 +290,7 @@ module.exports = async (command, args, msg, user, db) => {
         return msg.reply(txt);
     }
     
-    // COMMAND TOP
+    // 7. TOP
     if (command === 'topcrypto' || command === 'top') {
         let consolidated = {};
         Object.keys(db.users).forEach(id => {
@@ -296,14 +309,13 @@ module.exports = async (command, args, msg, user, db) => {
         await chat.sendMessage(res, { mentions: top.map(u => u.originalId) });
     }
 
-    // MARGIN (HUTANG) - HIGH RISK
+    // 8. MARGIN
     if (command === 'margin') {
         const koin = args[0]?.toLowerCase();
         const jml = parseFloat(args[1]?.replace(',', '.'));
         if (!marketData.prices[koin] || isNaN(jml) || jml <= 0) return msg.reply("❌ Format: !margin btc 0.1");
         
         const biaya = Math.floor(marketData.prices[koin] * jml);
-        // Limit Hutang: Maks 3x Saldo (Leverage 3x)
         if ((user.debt + biaya) > (user.balance * 3)) return msg.reply("❌ Limit Margin habis (Max 3x Saldo).");
 
         user.debt = (user.debt || 0) + biaya;
@@ -312,6 +324,7 @@ module.exports = async (command, args, msg, user, db) => {
         return msg.reply(`⚠️ *MARGIN ORDER*\nBerhutang Rp ${fmt(biaya)} untuk beli aset.\n_Awas! Jika harga turun, asetmu disita otomatis._`);
     }
 
+    // 9. PAYDEBT
     if (command === 'paydebt') {
         const bayar = parseInt(args[0]);
         const nominal = Math.min(isNaN(bayar) ? 0 : bayar, user.debt || 0);
@@ -324,7 +337,7 @@ module.exports = async (command, args, msg, user, db) => {
         return msg.reply(`✅ Hutang lunas Rp ${fmt(nominal)}. Sisa: Rp ${fmt(user.debt)}`);
     }
 
-    // MIGRASI
+    // 10. MIGRASI
     if (command === 'migrasi') {
         const targetJid = msg.message.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
         const senderId = msg.key.remoteJid || msg.author; 
