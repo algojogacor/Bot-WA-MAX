@@ -14,6 +14,7 @@ const profileCmd = require('./commands/profile');
 const battleCmd = require('./commands/battle');     
 const ttsCmd = require('./commands/tts');           
 const gameTebakCmd = require('./commands/gameTebak'); 
+const nationCmd = require('./commands/nation');
 const cryptoCmd = require('./commands/crypto');     
 const rouletteCmd = require('./commands/roulette');
 const pdfCmd = require('./commands/pdf');           
@@ -241,7 +242,7 @@ async function startBot() {
             }
             await gameTebakCmd(command, args, msg, user, db, body).catch(e => console.error("Error Game:", e.message));
 
-            // 2. MODUL PREFIX (Harus pakai !)
+            // 2. MODUL PREFIX (!)
             if (!isCommand) return;
             
             await toolsCmd(command, args, msg, user, db, sock).catch(e => console.error("Error Tools:", e.message));
@@ -250,6 +251,7 @@ async function startBot() {
             await minesCmd(command, args, msg, user, db).catch(e => console.error("Error Mines:", e.message));
             await duelCmd(command, args, msg, user, db).catch(e => console.error("Error Duel:", e.message));
             await bolaCmd(command, args, msg, user, db, sender).catch(e => console.error("Error Bola:", e.message));
+            await nationCmd(command, args, msg, user, db).catch(e => console.error("Error Nation:", e.message));
             await cryptoCmd(command, args, msg, user, db).catch(e => console.error("Error Crypto:", e.message));
             await robCmd(command, args, msg, user, db).catch(e => console.error("Error Rob:", e.message));
             await rouletteCmd(command, args, msg, user, db).catch(e => console.error("Error Roulette:", e.message));
@@ -313,6 +315,16 @@ async function startBot() {
 • !ask <tanya> (Auto-Pilot)
 • !sharechat (Buat Link History) 
 
+🏳️ *NEGARA (WAR)*
+• !negara : Cek status & infrastruktur
+• !buatnegara <nama> : Bikin Negara (Biaya 5 Miliar)
+• !bangun <tipe> : Bank(10M)/Benteng(25M)/RS(5M)
+• !rekrut <jml> : Beli Tentara (50 Juta/orang)
+• !serang @target : Perang Buta (Blind War)
+• !pajaknegara : Tarik pajak dari rakyat
+• !subsidi <jml> : Transfer Uang Pribadi -> Kas
+• !korupsi <jml> : Maling Uang Kas (Awas Kudeta!)
+
 📸 *EDITOR & MEDIA*
 • !sticker !toimg (Buat Stiker WA)
 • !topdf (Ubah Gambar ke PDF)
@@ -339,6 +351,7 @@ async function startBot() {
 }
 
 startBot();
+
 
 
 
