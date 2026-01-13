@@ -155,9 +155,10 @@ module.exports = async (command, args, msg, user, db) => {
 
     // 1. COMMAND RESET (RESTORED!)
     if (command === 'resetmarket') {
-        db.market = { prices: {} }; 
+        // Hapus total data market agar logic inisialisasi di atas berjalan ulang
+        delete db.market; 
         saveDB(db);
-        return msg.reply("♻️ *MARKET RESET!* Harga Sultan akan berlaku dalam 15 menit.");
+        return msg.reply("♻️ *MARKET BERHASIL DI-RESET TOTAL!*\nData harga, stok, dan berita telah dihapus.\n\n👉 *Silakan ketik !market lagi untuk membuat data baru.*");
     }
 
     // 2. MARKET
@@ -354,3 +355,4 @@ module.exports = async (command, args, msg, user, db) => {
         msg.reply(`✅ Migrasi sukses.`);
     }
 };
+
