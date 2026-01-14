@@ -1,28 +1,33 @@
 FROM node:20-bookworm
 
-# 1. Install FFmpeg & Library Pendukung (Wajib buat stiker/PDF)
+# 1. Install FFmpeg, ImageMagick, WebP, DAN PYTHON
 RUN apt-get update && \
     apt-get install -y \
     ffmpeg \
     imagemagick \
-    webp && \
+    webp \
+    python3 \
+    python3-pip && \
     apt-get upgrade -y && \
     rm -rf /var/lib/apt/lists/*
 
-# 2. Set Folder Kerja
+# 2. Install Library Python (Pillow) untuk Steganografi
+RUN pip3 install pillow --break-system-packages
+
+# 3. Set Folder Kerja
 WORKDIR /app
 
-# 3. Copy Package JSON dulu biar cache jalan
+# 4. Copy Package JSON dulu biar cache jalan
 COPY package*.json ./
 
-# 4. Install Library Node.js
+# 5. Install Library Node.js
 RUN npm install
 
-# 5. Copy Semua File Bot
+# 6. Copy Semua File Bot
 COPY . .
 
-# 6. Buka Port untuk Koyeb
+# 7. Buka Port untuk Koyeb
 EXPOSE 3000
 
-# 7. Jalankan Bot
+# 8. Jalankan Bot
 CMD ["node", "index.js"]
