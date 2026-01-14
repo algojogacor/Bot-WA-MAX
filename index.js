@@ -384,6 +384,121 @@ async function startBot() {
                  await profileCmd(command, args, msg, user, db, chat, sock).catch(e => console.error("Error Profile:", e.message));
             }
 
+            // ==========================================================
+            //  FITUR STEGANOGRAFI
+            // ==========================================================
+            
+            // COMMAND: !hide <pesan> (Reply/Kirim Gambar)
+            if (command === 'hide') {
+                const isImage = (msgType === 'imageMessage');
+                const isQuotedImage = m.message.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage;
+
+                if (!isImage && !isQuotedImage) return msg.reply("⚠️ Kirim/Reply gambar dengan caption: !hide pesan rahasia");
+                
+                const pesanRahasia = args.join(" ");
+                if (!pesanRahasia) return msg.reply("⚠️ Mana pesannya? Contoh: !hide Misi Rahasia 007");
+
+                msg.reply("⏳ Sedang menyembunyikan pesan...");
+
+                try {
+                    let messageToDownload = m;
+                    if (isQuotedImage) {
+                        messageToDownload = {
+                            key: m.message.extendedTextMessage.contextInfo.stanzaId,
+                            message: m.message.extendedTextMessage.contextInfo.quotedMessage
+                        };
+                    }
+
+                    const buffer = await downloadMediaMessage(
+                        messageToDownload,
+                        'buffer',
+                        {},
+                        { logger: pino({ level: 'silent' }) }
+                    );
+
+                    const inputPath = `./temp_input_${sender.split('@')[0]}.jpg`;
+                    const outputPath = `./temp_output_${sender.split('@')[0]}.png`;
+
+                    fs.writeFileSync(inputPath, buffer);
+                    
+                    // Pakai 'python3' dan path 'commands/stegano.py'
+                    const cmdPython = `python3 commands/stegano.py hide "${inputPath}" "${pesanRahasia}" "${outputPath}"`;
+
+                    exec(cmdPython, async (error, stdout, stderr) => {
+                        if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
+
+                        if (error) {
+                            console.error("Stegano Error:", error);
+                            if (error.message.includes("not found")) {
+                                return msg.reply("❌ Error: Python3 tidak terinstall/terdeteksi.");
+                            }
+                            return msg.reply("❌ Gagal. Pastikan gambar tidak rusak.");
+                        }
+
+                        await sock.sendMessage(remoteJid, { 
+                            document: fs.readFileSync(outputPath), 
+                            mimetype: 'image/png',
+                            fileName: 'RAHASIA.png',
+                            caption: '✅ SUKSES! Download file ini (Document) agar pesan aman.'
+                        }, { quoted: m });
+
+                        setTimeout(() => {
+                            if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
+                        }, 5000);
+                    });
+
+                } catch (err) {
+                    console.log(err);
+                    msg.reply("Gagal mendownload gambar.");
+                }
+            }
+
+            // COMMAND: !reveal (Reply Gambar/Dokumen)
+            if (command === 'reveal') {
+                const quotedMsg = m.message.extendedTextMessage?.contextInfo?.quotedMessage;
+                const isQuotedDoc = quotedMsg?.documentMessage;
+                const isQuotedImg = quotedMsg?.imageMessage;
+
+                if (!isQuotedDoc && !isQuotedImg) {
+                    return msg.reply("⚠️ Reply gambar/dokumen rahasia dengan !reveal");
+                }
+
+                msg.reply("🔍 Sedang membaca pesan...");
+
+                try {
+                    const messageToDownload = {
+                        key: m.message.extendedTextMessage.contextInfo.stanzaId,
+                        message: quotedMsg
+                    };
+
+                    const buffer = await downloadMediaMessage(
+                        messageToDownload,
+                        'buffer',
+                        {},
+                        { logger: pino({ level: 'silent' }) }
+                    );
+
+                    const inputPath = `./temp_reveal_${sender.split('@')[0]}.png`;
+                    fs.writeFileSync(inputPath, buffer);
+
+                    // Pakai 'python3' dan path 'commands/stegano.py'
+                    const cmdPython = `python3 commands/stegano.py reveal "${inputPath}"`;
+
+                    exec(cmdPython, (error, stdout, stderr) => {
+                        if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
+
+                        if (error) return msg.reply("❌ Tidak ditemukan pesan rahasia di file ini (atau format salah).");
+                        
+                        msg.reply(stdout);
+                    });
+
+                } catch (e) {
+                    console.log(e);
+                    msg.reply("Gagal mengambil media.");
+                }
+            }
+            
+
             // MENU UTAMA
             if (command === "menu" || command === "help") {
                 const menuText = `📜 *MENU BOT MULTIFUNGSI*
@@ -450,7 +565,7 @@ async function startBot() {
 • !pdfdone (Selesai & Buat PDF)
 • !tts (text to speech)
 • !img (Image generator)
-• !hide: Sembunyikan Pesan | !reveal: Munculkan pesan
+• !hide <pesan> (Reply/Kirim Gambar) | !reveal: Munculkan pesan
 
 🛠️ *TOOLS & ADMIN*
 • !id (Cek ID Lengkap)
@@ -470,6 +585,7 @@ async function startBot() {
 }
 
 startBot();
+
 
 
 
