@@ -230,7 +230,10 @@ async function startBot() {
             const command = isCommand ? args.shift().toLowerCase() : "";
             
 
+            // ==========================================================
             //  FITUR STEGANOGRAFI (Path: commands/stegano.py)
+            // ==========================================================
+            
             // COMMAND: !hide <pesan> (Reply/Kirim Gambar)
             if (command === 'hide') {
                 const isImage = (msgType === 'imageMessage');
@@ -264,13 +267,18 @@ async function startBot() {
 
                     fs.writeFileSync(inputPath, buffer);
                     
-                    const cmdPython = `python commands/stegano.py hide "${inputPath}" "${pesanRahasia}" "${outputPath}"`;
+                    // PERBAIKAN: Menggunakan 'python3' bukan 'python'
+                    const cmdPython = `python3 commands/stegano.py hide "${inputPath}" "${pesanRahasia}" "${outputPath}"`;
 
                     exec(cmdPython, async (error, stdout, stderr) => {
                         if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
 
                         if (error) {
                             console.error("Stegano Error:", error);
+                            // Cek error spesifik jika python3 tidak ditemukan
+                            if (error.message.includes("not found")) {
+                                return msg.reply("❌ Error: Python3 tidak terinstall di server bot ini.");
+                            }
                             return msg.reply("❌ Gagal. Pastikan gambar tidak rusak.");
                         }
 
@@ -320,12 +328,13 @@ async function startBot() {
                     const inputPath = `./temp_reveal_${sender.split('@')[0]}.png`;
                     fs.writeFileSync(inputPath, buffer);
 
-                    const cmdPython = `python commands/stegano.py reveal "${inputPath}"`;
+                    // PERBAIKAN: Menggunakan 'python3'
+                    const cmdPython = `python3 commands/stegano.py reveal "${inputPath}"`;
 
                     exec(cmdPython, (error, stdout, stderr) => {
                         if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
 
-                        if (error) return msg.reply("❌ Tidak ditemukan pesan rahasia di file ini.");
+                        if (error) return msg.reply("❌ Tidak ditemukan pesan rahasia di file ini (atau format salah).");
                         
                         msg.reply(stdout);
                     });
@@ -461,6 +470,7 @@ async function startBot() {
 }
 
 startBot();
+
 
 
 
