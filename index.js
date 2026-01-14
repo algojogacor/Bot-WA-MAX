@@ -233,7 +233,7 @@ async function startBot() {
             //  FITUR STEGANOGRAFI (Path: commands/stegano.py)
             // COMMAND: !hide <pesan> (Reply/Kirim Gambar)
             if (command === 'hide') {
-                const isImage = (type === 'imageMessage');
+                const isImage = (msgType === 'imageMessage');
                 const isQuotedImage = m.message.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage;
 
                 if (!isImage && !isQuotedImage) return msg.reply("⚠️ Kirim/Reply gambar dengan caption: !hide pesan rahasia");
@@ -461,6 +461,7 @@ async function startBot() {
 }
 
 startBot();
+
 
 
 
