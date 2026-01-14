@@ -1,7 +1,8 @@
 // --- 1. IMPORT MODUL UTAMA (BAILEYS) ---
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, downloadMediaMessage } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const fs = require('fs');
+const { exec } = require('child_process');
 
 // Database Lokal
 const { connectToCloud, loadDB, saveDB, addQuestProgress } = require('./helpers/database');
@@ -227,6 +228,113 @@ async function startBot() {
             const isCommand = body.startsWith('!');
             const args = isCommand ? body.slice(1).trim().split(/ +/) : [];
             const command = isCommand ? args.shift().toLowerCase() : "";
+            
+
+            //  FITUR STEGANOGRAFI (Path: commands/stegano.py)
+            // COMMAND: !hide <pesan> (Reply/Kirim Gambar)
+            if (command === 'hide') {
+                const isImage = (type === 'imageMessage');
+                const isQuotedImage = m.message.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage;
+
+                if (!isImage && !isQuotedImage) return msg.reply("⚠️ Kirim/Reply gambar dengan caption: !hide pesan rahasia");
+                
+                const pesanRahasia = args.join(" ");
+                if (!pesanRahasia) return msg.reply("⚠️ Mana pesannya? Contoh: !hide Misi Rahasia 007");
+
+                msg.reply("⏳ Sedang menyembunyikan pesan...");
+
+                try {
+                    let messageToDownload = m;
+                    if (isQuotedImage) {
+                        messageToDownload = {
+                            key: m.message.extendedTextMessage.contextInfo.stanzaId,
+                            message: m.message.extendedTextMessage.contextInfo.quotedMessage
+                        };
+                    }
+
+                    const buffer = await downloadMediaMessage(
+                        messageToDownload,
+                        'buffer',
+                        {},
+                        { logger: pino({ level: 'silent' }) }
+                    );
+
+                    const inputPath = `./temp_input_${sender.split('@')[0]}.jpg`;
+                    const outputPath = `./temp_output_${sender.split('@')[0]}.png`;
+
+                    fs.writeFileSync(inputPath, buffer);
+                    
+                    const cmdPython = `python commands/stegano.py hide "${inputPath}" "${pesanRahasia}" "${outputPath}"`;
+
+                    exec(cmdPython, async (error, stdout, stderr) => {
+                        if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
+
+                        if (error) {
+                            console.error("Stegano Error:", error);
+                            return msg.reply("❌ Gagal. Pastikan gambar tidak rusak.");
+                        }
+
+                        await sock.sendMessage(remoteJid, { 
+                            document: fs.readFileSync(outputPath), 
+                            mimetype: 'image/png',
+                            fileName: 'RAHASIA.png',
+                            caption: '✅ SUKSES! Download file ini (Document) agar pesan aman.'
+                        }, { quoted: m });
+
+                        setTimeout(() => {
+                            if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
+                        }, 5000);
+                    });
+
+                } catch (err) {
+                    console.log(err);
+                    msg.reply("Gagal mendownload gambar.");
+                }
+            }
+
+            // COMMAND: !reveal (Reply Gambar/Dokumen)
+            if (command === 'reveal') {
+                const quotedMsg = m.message.extendedTextMessage?.contextInfo?.quotedMessage;
+                const isQuotedDoc = quotedMsg?.documentMessage;
+                const isQuotedImg = quotedMsg?.imageMessage;
+
+                if (!isQuotedDoc && !isQuotedImg) {
+                    return msg.reply("⚠️ Reply gambar/dokumen rahasia dengan !reveal");
+                }
+
+                msg.reply("🔍 Sedang membaca pesan...");
+
+                try {
+                    const messageToDownload = {
+                        key: m.message.extendedTextMessage.contextInfo.stanzaId,
+                        message: quotedMsg
+                    };
+
+                    const buffer = await downloadMediaMessage(
+                        messageToDownload,
+                        'buffer',
+                        {},
+                        { logger: pino({ level: 'silent' }) }
+                    );
+
+                    const inputPath = `./temp_reveal_${sender.split('@')[0]}.png`;
+                    fs.writeFileSync(inputPath, buffer);
+
+                    const cmdPython = `python commands/stegano.py reveal "${inputPath}"`;
+
+                    exec(cmdPython, (error, stdout, stderr) => {
+                        if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
+
+                        if (error) return msg.reply("❌ Tidak ditemukan pesan rahasia di file ini.");
+                        
+                        msg.reply(stdout);
+                    });
+
+                } catch (e) {
+                    console.log(e);
+                    msg.reply("Gagal mengambil media.");
+                }
+            }
 
             // ==========================================================
             //  COMMAND HANDLER
@@ -333,6 +441,7 @@ async function startBot() {
 • !pdfdone (Selesai & Buat PDF)
 • !tts (text to speech)
 • !img (Image generator)
+• !hide: Sembunyikan Pesan | !reveal: Munculkan pesan
 
 🛠️ *TOOLS & ADMIN*
 • !id (Cek ID Lengkap)
@@ -352,6 +461,7 @@ async function startBot() {
 }
 
 startBot();
+
 
 
 
