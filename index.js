@@ -8,15 +8,16 @@ const { exec } = require('child_process');
 const { connectToCloud, loadDB, saveDB, addQuestProgress } = require('./helpers/database');
 
 // --- IMPORT COMMANDS ---
-const economyCmd = require('./commands/economy'); 
-const toolsCmd = require('./commands/tools');       
+const economyCmd = require('./commands/economy');     
+const propertyCmd = require('./commands/property'); 
+const stocksCmd = require('./commands/stocks');
+const cryptoCmd = require('./commands/crypto'); 
 const bolaCmd = require('./commands/bola');         
 const profileCmd = require('./commands/profile');   
 const battleCmd = require('./commands/battle');     
 const ttsCmd = require('./commands/tts');           
 const gameTebakCmd = require('./commands/gameTebak'); 
 const nationCmd = require('./commands/nation');
-const cryptoCmd = require('./commands/crypto');     
 const rouletteCmd = require('./commands/roulette');
 const pdfCmd = require('./commands/pdf');           
 const robCmd = require('./commands/rob');           
@@ -25,8 +26,7 @@ const adminCmd = require('./commands/admin');
 const aiCmd = require('./commands/ai');   
 const minesCmd = require('./commands/mines');
 const duelCmd = require('./commands/duel');
-const stocksCmd = require('./commands/stocks');
-const propertyCmd = require('./commands/property'); 
+const toolsCmd = require('./commands/tools');   
 const imageCmd = require('./commands/image'); 
 
 // --- 2. KONFIGURASI WHITELIST GRUP ---
@@ -362,20 +362,21 @@ async function startBot() {
             // 2. MODUL PREFIX (!)
             if (!isCommand) return;
             
+           
             await toolsCmd(command, args, msg, user, db, sock).catch(e => console.error("Error Tools:", e.message));
             await economyCmd(command, args, msg, user, db).catch(e => console.error("Error Economy:", e.message));
+            await stocksCmd(command, args, msg, user, db).catch(e => console.error("Error Stocks:", e.message));
+            await cryptoCmd(command, args, msg, user, db).catch(e => console.error("Error Crypto:", e.message));
             await propertyCmd(command, args, msg, user, db).catch(e => console.error("Error Property:", e.message));
             await minesCmd(command, args, msg, user, db).catch(e => console.error("Error Mines:", e.message));
             await duelCmd(command, args, msg, user, db).catch(e => console.error("Error Duel:", e.message));
             await bolaCmd(command, args, msg, user, db, sender).catch(e => console.error("Error Bola:", e.message));
             await nationCmd(command, args, msg, user, db).catch(e => console.error("Error Nation:", e.message));
-            await cryptoCmd(command, args, msg, user, db).catch(e => console.error("Error Crypto:", e.message));
             await robCmd(command, args, msg, user, db).catch(e => console.error("Error Rob:", e.message));
             await rouletteCmd(command, args, msg, user, db).catch(e => console.error("Error Roulette:", e.message));
             await battleCmd(command, args, msg, user, db).catch(e => console.error("Error Battle:", e.message));
             await ttsCmd(command, args, msg).catch(e => console.error("Error TTS:", e.message));
             await wikiKnowCmd(command, args, msg).catch(e => console.error("Error WikiKnow:", e.message));
-            await stocksCmd(command, args, msg, user, db).catch(e => console.error("Error Stocks:", e.message));
             await adminCmd(command, args, msg, user, db).catch(e => console.error("Error Admin:", e.message));
             await aiCmd(command, args, msg, user, db).catch(e => console.error("Error AI:", e.message));
             await imageCmd(command, args, msg, user, db, sock).catch(e => console.error("Error Image:", e.message));
@@ -585,6 +586,7 @@ async function startBot() {
 }
 
 startBot();
+
 
 
 
