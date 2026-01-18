@@ -284,17 +284,29 @@ module.exports = async (command, args, msg, user, db) => {
     if (command === 'pf' || command === 'portofolio') {
         let txt = `💰 *ASET CRYPTO SULTAN*\n\n`;
         let assetTotal = 0;
-        for (let [k, v] of Object.entries(user.crypto)) {
-            if (v > 0.000001) {
-                let val = Math.floor(v * marketData.prices[k]); 
+        
+        // Safety: Pastikan object crypto ada, kalau null ganti {}
+        const safeCrypto = user.crypto || {};
+
+        for (let [k, v] of Object.entries(safeCrypto)) {
+            // Cek: Jumlah > 0 DAN Harga koin tersebut ada di pasar
+            if (v > 0.000001 && marketData.prices[k]) {
+                let price = marketData.prices[k]; 
+                let val = Math.floor(v * price);
+                
                 assetTotal += val;
                 txt += `🔸 *${k.toUpperCase()}*: ${v.toLocaleString('id-ID')} (Rp ${fmt(val)})\n`;
             }
         }
-        let netWorth = assetTotal + user.balance - user.debt;
-        txt += `\n💵 Tunai: Rp ${fmt(user.balance)}\n`;
-        if (user.debt > 0) txt += `⚠️ Hutang Margin: Rp ${fmt(user.debt)}\n`;
+
+        let saldo = user.balance || 0;
+        let hutang = user.debt || 0;
+        let netWorth = assetTotal + saldo - hutang;
+
+        txt += `\n💵 Tunai: Rp ${fmt(saldo)}\n`;
+        if (hutang > 0) txt += `⚠️ Hutang Margin: Rp ${fmt(hutang)}\n`;
         txt += `📊 *Net Worth: Rp ${fmt(netWorth)}*`;
+        
         return msg.reply(txt);
     }
     
@@ -362,3 +374,4 @@ module.exports = async (command, args, msg, user, db) => {
         msg.reply(`✅ Migrasi sukses.`);
     }
 };
+
