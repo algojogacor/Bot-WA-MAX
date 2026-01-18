@@ -5,42 +5,35 @@ const fmt = (num) => {
     return Math.floor(Number(num)).toLocaleString('id-ID');
 };
 
-// --- KONFIGURASI PASAR (SULTAN HARDCORE EDITION) ---
+// --- KONFIGURASI PASAR (REAL WORLD TIER) ---
+// volatility: Seberapa liar pergerakannya (Realism: BTC rendah, Meme tinggi)
+// correlation: Seberapa kuat ikut pergerakan BTC (0.0 - 1.0)
 const COIN_CONFIG = {
-    // BTC: Aset Naga (Volatilitas 15%)
-    btc:  { start: 5_000_000_000, min: 500_000_000, vol: 15, bounce: 1, baseStock: 20 },
-    
-    // ETH: High Tier (Volatilitas 25%)
-    eth:  { start: 500_000_000,   min: 50_000_000,  vol: 25, bounce: 1, baseStock: 50 },
-    
-    // SOL: Mid Tier (Volatilitas 40%)
-    sol:  { start: 50_000_000,    min: 5_000_000,   vol: 40, bounce: 1, baseStock: 150 },
-    
-    // DOGE: Judi Tier (Volatilitas 80%)
-    doge: { start: 5_000_000,     min: 100_000,     vol: 80, bounce: 1, baseStock: 1000 },
-    
-    // PEPE: SCAM OR LAMBO (Volatilitas 150%)
-    pepe: { start: 500_000,       min: 1_000,       vol: 150, bounce: 5, baseStock: 5000 }
+    btc:  { start: 5_000_000_000, min: 2_000_000_000, vol: 0.05, correlation: 1.0, baseStock: 20 },
+    eth:  { start: 500_000_000,   min: 100_000_000,   vol: 0.08, correlation: 0.9, baseStock: 50 },
+    sol:  { start: 50_000_000,    min: 5_000_000,     vol: 0.12, correlation: 0.7, baseStock: 150 },
+    doge: { start: 5_000_000,     min: 100_000,       vol: 0.20, correlation: 0.5, baseStock: 1000 },
+    pepe: { start: 500_000,       min: 1_000,         vol: 0.35, correlation: 0.3, baseStock: 5000 }
 };
 
-// --- BERITA PASAR EKSTREM ---
+// --- BERITA PASAR (REALISTIS & MAKRO) ---
 const newsPool = [
-    // BAD NEWS (CRASH / RUG PULL)
-    { txt: "☠️ BINANCE DIRETAS! Hacker mencuri 100.000 BTC!", effect: { all: 0.4 }, sMod: { all: 20 } }, 
-    { txt: "📉 AMERIKA SERIKAT MELARANG TOTAL CRYPTO!", effect: { all: 0.1 }, sMod: { all: 50 } }, 
-    { txt: "🐸 DEVELOPER PEPE KABUR (RUG PULL)!", effect: { pepe: 0.05 }, sMod: { pepe: 10000 } }, 
-    { txt: "🐕 Elon Musk bilang Doge itu 'Sampah'.", effect: { doge: 0.2 }, sMod: { doge: 5000 } }, 
+    // GLOBAL MACRO (Mempengaruhi BTC & ETH kuat)
+    { txt: "🇺🇸 The Fed menaikkan suku bunga! Pasar panik.", type: "macro", sentiment: -0.15 },
+    { txt: "🇺🇸 Inflasi AS turun, investor kembali optimis.", type: "macro", sentiment: 0.10 },
+    { txt: "🇨🇳 China melarang penambangan Bitcoin kembali.", type: "macro", sentiment: -0.20 },
+    { txt: "🇪🇺 Eropa meresmikan regulasi crypto yang ramah.", type: "macro", sentiment: 0.08 },
     
-    // GOOD NEWS (MOON / JACKPOT)
-    { txt: "🚀 ELON MUSK: 'Tesla resmi menerima Doge!'", effect: { doge: 5.0 }, sMod: { doge: -800 } }, 
-    { txt: "🌕 BITCOIN menembus resisten $1 Juta!", effect: { btc: 2.5, all: 1.5 }, sMod: { btc: -15 } }, 
-    { txt: "💎 BLACKROCK memborong semua stok Ethereum!", effect: { eth: 3.0 }, sMod: { eth: -40 } }, 
-    { txt: "🐸 PEPE LISTING DI BINANCE! Hype gila-gilaan!", effect: { pepe: 10.0 }, sMod: { pepe: -4000 } }, 
+    // COIN SPECIFIC (Hype / FUD)
+    { txt: "🐳 Whale misterius memindahkan 10.000 BTC ke exchange.", type: "dump", target: "btc", strength: 0.12 },
+    { txt: "⚡ Jaringan Solana mengalami kemacetan (outage).", type: "dump", target: "sol", strength: 0.25 },
+    { txt: "🐕 Elon Musk memposting foto anjing di Twitter.", type: "pump", target: "doge", strength: 0.40 },
+    { txt: "🐸 Komunitas PEPE membakar 1 Triliun token.", type: "pump", target: "pepe", strength: 0.50 },
     
-    // NORMAL NEWS
-    { txt: "📊 Market sideways, trader menunggu sinyal.", effect: { all: 1.0 }, sMod: { all: 0 } },
-    { txt: "📉 Koreksi wajar setelah kenaikan harga.", effect: { all: 0.8 }, sMod: { all: 5 } },
-    { txt: "📈 Sentimen positif dari investor Asia.", effect: { all: 1.2 }, sMod: { all: -5 } }
+    // MARKET SENTIMENT
+    { txt: "📊 Volume perdagangan rendah, pasar stagnan.", type: "neutral", sentiment: 0 },
+    { txt: "📈 Altseason dimulai! Dominasi BTC turun.", type: "altseason", sentiment: 0.05 },
+    { txt: "📉 Bitcoin Dominance naik, Altcoin berdarah.", type: "btcdom", sentiment: -0.05 }
 ];
 
 module.exports = async (command, args, msg, user, db) => {
@@ -49,7 +42,7 @@ module.exports = async (command, args, msg, user, db) => {
     if (typeof user.crypto === 'undefined') user.crypto = {};
     if (typeof user.debt === 'undefined') user.debt = 0;
 
-    // 2. Inisialisasi Market
+    // 2. Inisialisasi Market State (Menambah Momentum & History)
     if (!db.market || !db.market.prices) {
         db.market = {
             lastUpdate: 0, 
@@ -61,10 +54,10 @@ module.exports = async (command, args, msg, user, db) => {
                 pepe: COIN_CONFIG.pepe.start 
             },
             stocks: { btc: 20, eth: 50, sol: 150, doge: 1000, pepe: 5000 },
-            lastStockChange: { btc: 0, eth: 0, sol: 0, doge: 0, pepe: 0 },
-            currentNews: "Pasar dibuka. Menunggu volatilitas tinggi.",
-            nextNews: "Analisis pasar sedang berjalan...",
-            marketTrend: "NORMAL"
+            lastMoves: { btc: 0, eth: 0, sol: 0, doge: 0, pepe: 0 }, // Momentum tracker
+            currentNews: "Pasar dibuka.",
+            marketTrend: "NEUTRAL",
+            btcTrend: 0 // Tren utama BTC (-1 s/d 1)
         };
         saveDB(db);
     }
@@ -72,61 +65,87 @@ module.exports = async (command, args, msg, user, db) => {
     const marketData = db.market;
     const now = Date.now();
     const UPDATE_INTERVAL = 15 * 60 * 1000; // 15 Menit
-    const TAX_SELL = 0.05; // Pajak Jual 5%
     
     // ============================================================
-    // 3. ENGINE PERUBAHAN HARGA (CORE)
+    // 3. REALISTIC ENGINE (MOMENTUM & CORRELATION)
     // ============================================================
     if (now - marketData.lastUpdate > UPDATE_INTERVAL) {
         
-        const activeNews = newsPool[Math.floor(Math.random() * newsPool.length)];
-        if (!marketData.nextNews) marketData.nextNews = newsPool[Math.floor(Math.random() * newsPool.length)].txt;
+        // A. Pilih Berita
+        const news = newsPool[Math.floor(Math.random() * newsPool.length)];
+        marketData.currentNews = news.txt;
 
-        const trendRng = Math.random() * 100;
-        let trendBias = 0; 
-        let trendName = "NORMAL";
+        // B. Update Tren Global BTC (Induk Pasar)
+        // BTC bergerak berdasarkan sentimen Macro + Random Noise + Momentum lama
+        let noise = (Math.random() - 0.5) * 0.1; // Random -5% s/d +5%
+        let macroEffect = (news.type === 'macro') ? news.sentiment : 0;
+        let momentum = marketData.lastMoves['btc'] * 0.5; // Inertia 50% dari move sebelumnya
 
-        if (trendRng < 10) { 
-            trendBias = 100; // +100%
-            trendName = "🚀 SUPER BULL RUN";
-        } else if (trendRng < 20) { 
-            trendBias = -80; // -80%
-            trendName = "🩸 MARKET CRASH";
-        } else if (trendRng < 60) {
-            trendName = "⚡ HIGH VOLATILITY"; 
-        } 
+        // Hitung pergerakan BTC hari ini
+        let btcMove = noise + macroEffect + momentum;
+        
+        // Capping pergerakan BTC biar gak terlalu gila (Realistis max +/- 20% per update)
+        if (btcMove > 0.2) btcMove = 0.2;
+        if (btcMove < -0.2) btcMove = -0.2;
 
-        marketData.marketTrend = trendName;
-        marketData.currentNews = activeNews.txt;
+        marketData.btcTrend = btcMove; // Simpan tren BTC
 
+        // Tentukan Label Tren
+        if (btcMove > 0.15) marketData.marketTrend = "🚀 BULL RUN";
+        else if (btcMove > 0.05) marketData.marketTrend = "📈 UPTREND";
+        else if (btcMove < -0.15) marketData.marketTrend = "🩸 CRASH";
+        else if (btcMove < -0.05) marketData.marketTrend = "📉 DOWNTREND";
+        else marketData.marketTrend = "➡️ SIDEWAYS";
+
+        // C. Update Harga Semua Koin
         for (let k in marketData.prices) {
             const config = COIN_CONFIG[k];
-            let volatility = config.vol;
-            if (trendName === "⚡ HIGH VOLATILITY") volatility *= 2; 
+            const oldPrice = marketData.prices[k];
+            let percentChange = 0;
 
-            let randomPercent = (Math.random() * (volatility * 2)) - volatility;
-            let totalPercent = randomPercent + trendBias;
+            if (k === 'btc') {
+                percentChange = btcMove;
+            } else {
+                // Koin lain mengikuti BTC berdasarkan 'correlation'
+                let correlationMove = btcMove * config.correlation;
+                
+                // Tambah volatilitas unik koin tersebut
+                let uniqueMove = (Math.random() - 0.5) * config.vol; 
+                
+                // Efek Berita Spesifik
+                let newsEffect = 0;
+                if (news.target === k) {
+                    newsEffect = (news.type === 'pump') ? news.strength : -news.strength;
+                }
 
-            let newsMultiplier = activeNews.effect?.[k] || activeNews.effect?.all || 1.0;
-            let currentPrice = marketData.prices[k];
-            let newPrice = currentPrice * (1 + (totalPercent / 100)) * newsMultiplier;
+                percentChange = correlationMove + uniqueMove + newsEffect;
+            }
 
-            if (newPrice < config.min) newPrice = config.min * (1 + Math.random()); 
+            // --- LOGIKA KOREKSI (PROFIT TAKING / BUYBACK) ---
+            // Jika harga naik terlalu tinggi (>30% dalam 1 sesi), ada aksi jual otomatis (koreksi)
+            if (percentChange > 0.30) percentChange -= 0.10; 
+            // Jika harga jatuh terlalu dalam (<-30%), ada aksi beli (buyback)
+            if (percentChange < -0.30) percentChange += 0.10;
 
-            marketData.prices[k] = Math.floor(newPrice) || 1000;
-
-            const currentStock = marketData.stocks[k];
-            const baseStock = config.baseStock;
-            let refillRate = 0;
-            if (currentStock < baseStock * 0.2) refillRate = 0.5; 
-            else if (currentStock < baseStock) refillRate = 0.1; 
+            // Terapkan Harga Baru
+            let newPrice = oldPrice * (1 + percentChange);
             
-            let stockChange = Math.floor(baseStock * refillRate) + (Math.floor(Math.random() * 10) - 5);
-            marketData.stocks[k] = Math.max(0, currentStock + stockChange);
-            marketData.lastStockChange[k] = stockChange;
+            // Hard Floor (Support Level)
+            if (newPrice < config.min) newPrice = config.min * (1 + (Math.random() * 0.1));
+
+            marketData.prices[k] = Math.floor(newPrice);
+            marketData.lastMoves[k] = percentChange; // Simpan untuk momentum next round
+            
+            // Refill Stok Pasar (Stok naik kalau harga turun - panic selling)
+            // Stok turun kalau harga naik - orang HODL
+            let stockChange = 0;
+            if (percentChange > 0) stockChange = -Math.floor(config.baseStock * 0.05); // Harga naik, stok langka
+            else stockChange = Math.floor(config.baseStock * 0.1); // Harga turun, stok banjir
+            
+            marketData.stocks[k] = Math.max(10, marketData.stocks[k] + stockChange);
         }
 
-        // LIKUIDASI MARGIN
+        // --- LIKUIDASI MARGIN ---
         Object.keys(db.users).forEach(id => {
             let u = db.users[id];
             if (u.debt > 0) {
@@ -134,18 +153,15 @@ module.exports = async (command, args, msg, user, db) => {
                 if (u.crypto) for (let [k, v] of Object.entries(u.crypto)) totalAsset += v * (marketData.prices[k] || 0);
                 const collateral = totalAsset + (u.balance || 0);
                 
-                if (u.debt > (collateral * 0.8)) { // Margin Call 80%
-                    u.crypto = {}; 
-                    u.balance = 0; 
-                    u.debt = 0;    
+                if (u.debt > (collateral * 0.85)) { // 85% LTV Liquidation
+                    u.crypto = {}; u.balance = 0; u.debt = 0;    
                 } else {
-                    u.debt = Math.floor(u.debt * 1.1); // Bunga 10%
+                    u.debt = Math.floor(u.debt * 1.05); // Bunga 5% (Lebih wajar)
                 }
             }
         });
         
         marketData.lastUpdate = now;
-        marketData.nextNews = newsPool[Math.floor(Math.random() * newsPool.length)].txt;
         saveDB(db);
     }
 
@@ -153,42 +169,41 @@ module.exports = async (command, args, msg, user, db) => {
     // COMMANDS
     // ============================================================
 
-    // 1. COMMAND RESET (RESTORED!)
+    // 1. RESET (Penting!)
     if (command === 'resetmarket') {
-        // Hapus total data market agar logic inisialisasi di atas berjalan ulang
         delete db.market; 
         saveDB(db);
-        return msg.reply("♻️ *MARKET BERHASIL DI-RESET TOTAL!*\nData harga, stok, dan berita telah dihapus.\n\n👉 *Silakan ketik !market lagi untuk membuat data baru.*");
+        return msg.reply("♻️ *MARKET RESET!* Algoritma Realistis (BTC Driven) aktif.");
     }
 
-    // 2. MARKET
+    // 2. MARKET UI
     if (command === 'market') {
         const getTxt = (n) => (n && typeof n === 'object' && n.txt) ? n.txt : n;
         if (!marketData.currentNews) marketData.currentNews = newsPool[0].txt;
-        if (!marketData.nextNews) marketData.nextNews = newsPool[0].txt;
 
         let timeLeft = UPDATE_INTERVAL - (now - marketData.lastUpdate);
         if (timeLeft < 0) timeLeft = 0;
         let mLeft = Math.floor(timeLeft / 60000);
         let sLeft = Math.floor((timeLeft % 60000) / 1000);
 
-        let txt = `📊 *CRYPTO SULTAN* [${marketData.marketTrend}]\n━━━━━━━━━━━━━━\n`;
+        let txt = `📊 *CRYPTO GLOBAL* [${marketData.marketTrend}]\n━━━━━━━━━━━━━━\n`;
         
         for (let k in marketData.prices) {
             let price = marketData.prices[k];
             let stock = Math.floor(marketData.stocks[k]);
-            let icon = '🪙';
-            if (marketData.marketTrend.includes("CRASH")) icon = '🩸';
-            if (marketData.marketTrend.includes("BULL") || marketData.marketTrend.includes("MOON")) icon = '🚀';
+            let move = (marketData.lastMoves[k] * 100).toFixed(2);
+            
+            let icon = move >= 0 ? '🟢' : '🔴';
+            if (move > 20) icon = '🚀';
+            if (move < -20) icon = '🩸';
 
-            txt += `${icon} *${k.toUpperCase()}*: 💰${fmt(price)}\n`;
-            txt += `   └ Stok: ${fmt(stock)}\n`;
+            txt += `${icon} *${k.toUpperCase()}*: Rp ${fmt(price)} (${move}%)\n`;
+            txt += `   └ Vol: ${fmt(stock)}\n`;
         }
 
         txt += `━━━━━━━━━━━━━━\n`;
-        txt += `📢 *NEWS:* "${getTxt(marketData.currentNews)}"\n`;
-        txt += `🔮 *RUMOR:* "${getTxt(marketData.nextNews)}"\n\n`;
-        txt += `⏳ Update: ${mLeft}m ${sLeft}s\n`;
+        txt += `🗞️ *NEWS:* "${getTxt(marketData.currentNews)}"\n`;
+        txt += `⏳ Next Candle: ${mLeft}m ${sLeft}s\n`;
         txt += `💰 Saldo: Rp ${fmt(user.balance)}`;
         return msg.reply(txt);
     }
@@ -197,7 +212,6 @@ module.exports = async (command, args, msg, user, db) => {
     if (command === 'buycrypto') {
         const koin = args[0]?.toLowerCase();
         const jml = parseFloat(args[1]?.replace(',', '.')); 
-        
         if (!marketData.prices[koin] || isNaN(jml) || jml <= 0) return msg.reply("❌ Format: !buycrypto btc 0.1");
         
         const price = marketData.prices[koin];
@@ -213,7 +227,7 @@ module.exports = async (command, args, msg, user, db) => {
         return msg.reply(`✅ *BELI SUKSES*\n+ ${jml} ${koin.toUpperCase()}\n- Rp ${fmt(total)}`);
     }
 
-    // 4. SELL
+    // 4. SELL (PAJAK SULTAN PROGRESIF - DIPERTAHANKAN)
     if (command === 'sellcrypto') {
         const koin = args[0]?.toLowerCase();
         let jml = args[1];
@@ -221,51 +235,44 @@ module.exports = async (command, args, msg, user, db) => {
         if (!user.crypto?.[koin]) return msg.reply(`❌ Gak punya aset ${koin}!`);
         if (jml === 'all') jml = user.crypto[koin];
         else jml = parseFloat(jml?.replace(',', '.'));
-
         if (isNaN(jml) || jml <= 0 || user.crypto[koin] < jml) return msg.reply(`❌ Jumlah salah.`);
 
         const bruto = marketData.prices[koin] * jml;
-        const pajak = bruto * TAX_SELL;
+
+        // --- PAJAK PROGRESIF ---
+        let taxRate = 0.05; 
+        if (user.balance > 100_000_000_000_000) taxRate = 0.50; // >100T = 50% Pajak
+        else if (user.balance > 10_000_000_000_000) taxRate = 0.20; // >10T = 20% Pajak
+
+        const pajak = Math.floor(bruto * taxRate);
         const neto = Math.floor(bruto - pajak); 
 
         user.crypto[koin] -= jml;
         user.balance += neto; 
         marketData.stocks[koin] += jml;
         saveDB(db);
-        return msg.reply(`✅ *JUAL SUKSES*\n+ Rp ${fmt(neto)} (Potong Pajak 5%)`);
+        
+        return msg.reply(`✅ *JUAL SUKSES*\n+ Rp ${fmt(neto)}\n_(Tax ${(taxRate*100)}%: Rp ${fmt(pajak)})_`);
     }
 
-    // 5. MINING (RESTORED & UPGRADED!)
+    // 5. MINING
     if (command === 'mining' || command === 'mine') {
-        const COOLDOWN = 60 * 60 * 1000; // 1 Jam sekali (Biar gak spam)
+        const COOLDOWN = 60 * 60 * 1000; 
         if (now - (user.lastMining || 0) < COOLDOWN) {
             const timeLeft = Math.ceil((COOLDOWN - (now - user.lastMining)) / 60000);
-            return msg.reply(`⏳ Mining Rig lagi pendingin! Tunggu ${timeLeft} menit.`);
+            return msg.reply(`⏳ Mining Rig panas! Tunggu ${timeLeft} menit.`);
         }
 
-        // Gacha System: Common (80%), Rare (15%), Legendary (5%)
         const roll = Math.random();
         let coin = 'doge';
         let amount = 0;
         let rarity = "Common";
 
-        if (roll < 0.05) { // 5% Chance BTC
-            coin = 'btc';
-            rarity = "🔥 LEGENDARY";
-            amount = 0.000005; // Kecil karena harga BTC 5 Miliar (Dapat sekitar 25rb)
-        } else if (roll < 0.20) { // 15% Chance SOL
-            coin = 'sol';
-            rarity = "🔷 RARE";
-            amount = 0.0005; 
-        } else { // 80% Chance PEPE/DOGE
-            coin = Math.random() > 0.5 ? 'pepe' : 'doge';
-            rarity = "⚪ Common";
-            amount = Math.random() * 5; 
-        }
+        if (roll < 0.05) { coin = 'btc'; rarity = "🔥 LEGENDARY"; amount = 0.000005; } 
+        else if (roll < 0.20) { coin = 'sol'; rarity = "🔷 RARE"; amount = 0.0005; } 
+        else { coin = Math.random() > 0.5 ? 'pepe' : 'doge'; rarity = "⚪ Common"; amount = Math.random() * 5; }
 
-        // Estimasi nilai
         const value = amount * marketData.prices[coin];
-        
         user.crypto[coin] = (user.crypto[coin] || 0) + amount;
         user.lastMining = now;
         saveDB(db);
@@ -355,4 +362,3 @@ module.exports = async (command, args, msg, user, db) => {
         msg.reply(`✅ Migrasi sukses.`);
     }
 };
-
